@@ -1,0 +1,72 @@
+name: sentinel-mail
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-sentinel_mail}
+      POSTGRES_USER: ${POSTGRES_USER:-sentinel}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sentinel}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sentinel} -d ${POSTGRES_DB:-sentinel_mail}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build:
+      context: ./backend
+    image: sentinel-mail-web
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-sentinel}:${POSTGRES_PASSWORD:-sentinel}@db:5432/${POSTGRES_DB:-sentinel_mail}
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+
+  worker:
+    build:
+      context: .
+      dockerfile: worker/Dockerfile
+    image: sentinel-mail-worker
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-sentinel}:${POSTGRES_PASSWORD:-sentinel}@db:5432/${POSTGRES_DB:-sentinel_mail}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  cups:
+    build:
+      context: ./cups
+    image: sentinel-mail-cups
+    restart: unless-stopped
+    ports:
+      - "631:631"
+    volumes:
+      - cups_config:/etc/cups
+    # If your network printers aren't reachable from the Docker bridge network
+    # (common on Wi-Fi/mDNS-heavy home networks), uncomment the line below
+    # instead of `ports:` above - gives CUPS direct access to the host's LAN:
+    # network_mode: host
+
+  frontend:
+    build:
+      context: ./frontend
+    image: sentinel-mail-frontend
+    restart: unless-stopped
+    depends_on:
+      - web
+    ports:
+      - "${WEB_SERVER_PORT:-3000}:80"
+
+volumes:
+  db_data:
+  cups_config:
