@@ -5,6 +5,16 @@ Format angelehnt an [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ## [Unreleased]
 
+### Behoben
+
+- `.gitattributes` ergänzt, das `*.sh` auf LF-Zeilenenden festlegt. Ohne diese Datei
+  checkte Git auf Windows (mit `core.autocrlf=true`) die Container-Entrypoints
+  `cups/docker-entrypoint.sh` und `backend/docker-entrypoint.sh` mit CRLF aus. Das `\r`
+  in der Shebang-Zeile ließ die Container mit
+  `exec /usr/local/bin/docker-entrypoint.sh: no such file or directory` sterben
+  (CUPS Exit 255); zudem lief `alembic upgrade head` nie, sodass die Tabelle `accounts`
+  fehlte (`relation "accounts" does not exist`).
+
 ## [0.1.0] - 2026-07-15
 
 Erste lauffähige Version.

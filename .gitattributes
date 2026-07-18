@@ -1,0 +1,9 @@
+# Zeilenenden normalisieren: Git entscheidet Text/Binär automatisch, LF im Repo.
+* text=auto eol=lf
+
+# Shell-Skripte MÜSSEN LF behalten (laufen in Linux-Containern).
+*.sh text eol=lf
+
+# Windows-spezifische Skripte behalten CRLF (aktuell keine vorhanden, defensiv).
+*.bat text eol=crlf
+*.cmd text eol=crlf
