@@ -18,7 +18,19 @@ class Settings(BaseSettings):
 
     log_level: str = "INFO"
 
+    # Timezone against which action-chain time windows (Zeitsteuerung) are
+    # evaluated. Any IANA name (e.g. "Europe/Berlin"); invalid names fall back
+    # to UTC. See worker.chain_matcher.
+    app_timezone: str = "UTC"
+
     default_poll_interval_seconds: int = 60
+
+    # IMAP IDLE (live push). default_use_idle applies to accounts whose use_idle is NULL.
+    # idle_refresh_seconds re-issues IDLE before the ~29-min RFC 2177 server timeout.
+    # idle_safety_poll_seconds is the low-frequency fallback poll cadence for idle accounts.
+    default_use_idle: bool = False
+    idle_refresh_seconds: int = 300
+    idle_safety_poll_seconds: int = 900
 
     cups_server_host: str = "cups"
     cups_server_port: int = 631

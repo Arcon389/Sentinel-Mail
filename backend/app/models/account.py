@@ -23,6 +23,8 @@ class Account(Base):
     folder: Mapped[str] = mapped_column(String(255), nullable=False, default="INBOX")
 
     poll_interval_seconds: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # None => inherit the global default (settings.default_use_idle). See effective_use_idle().
+    use_idle: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
     created_at: Mapped[datetime] = mapped_column(server_default=func.now(), nullable=False)
@@ -31,3 +33,15 @@ class Account(Base):
     state: Mapped["AccountState | None"] = relationship(
         back_populates="account", uselist=False, cascade="all, delete-orphan"
     )
+
+
+def effective_use_idle(account: "Account", settings) -> bool:
+    """Resolve whether an account runs in IMAP IDLE (push) mode.
+
+    A per-account ``use_idle`` of None means "inherit the global default"
+    (``settings.default_use_idle``), mirroring the ``poll_interval_seconds``
+    override pattern.
+    """
+    if account.use_idle is not None:
+        return account.use_idle
+    return settings.default_use_idle

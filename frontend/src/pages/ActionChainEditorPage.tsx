@@ -16,6 +16,14 @@ const emptyChainForm = (accountId: string): ActionChainInput => ({
   loop_pause_seconds: 0,
   loop_max_iterations: 1,
   loop_infinite: false,
+  time_window_enabled: false,
+  time_start: null,
+  time_end: null,
+  condition_match: "all",
+  sender_filter_mode: "contains",
+  sender_filter: null,
+  subject_regex: null,
+  body_regex: null,
 });
 
 export function ActionChainEditorPage() {
@@ -253,6 +261,112 @@ export function ActionChainEditorPage() {
                         </p>
                       </div>
                     )}
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={chain.time_window_enabled}
+                        onChange={(e) =>
+                          updateChainMutation.mutate({ id: chain.id, input: { time_window_enabled: e.target.checked } })
+                        }
+                      />
+                      Nur zu bestimmten Zeiten ausführen (Zeitsteuerung)
+                    </label>
+                    {chain.time_window_enabled && (
+                      <div className="loop-settings">
+                        <label>
+                          Von
+                          <input
+                            type="time"
+                            value={chain.time_start ?? ""}
+                            onChange={(e) =>
+                              updateChainMutation.mutate({ id: chain.id, input: { time_start: e.target.value || null } })
+                            }
+                          />
+                        </label>
+                        <label>
+                          Bis
+                          <input
+                            type="time"
+                            value={chain.time_end ?? ""}
+                            onChange={(e) =>
+                              updateChainMutation.mutate({ id: chain.id, input: { time_end: e.target.value || null } })
+                            }
+                          />
+                        </label>
+                        <p className="hint">
+                          Die Kette läuft nur, wenn die Uhrzeit im Fenster liegt. Ein Fenster über Mitternacht (z.B. 22:00
+                          bis 06:00) ist erlaubt. Ausgewertet wird gegen die konfigurierte Zeitzone (<code>APP_TIMEZONE</code>).
+                        </p>
+                      </div>
+                    )}
+
+                    <label>
+                      Bedingungen verknüpfen
+                      <select
+                        value={chain.condition_match}
+                        onChange={(e) =>
+                          updateChainMutation.mutate({
+                            id: chain.id,
+                            input: { condition_match: e.target.value as "all" | "any" },
+                          })
+                        }
+                      >
+                        <option value="all">UND – alle gesetzten Bedingungen müssen passen</option>
+                        <option value="any">ODER – eine gesetzte Bedingung reicht</option>
+                      </select>
+                    </label>
+                    <div className="loop-settings">
+                      <label>
+                        Absender
+                        <input
+                          value={chain.sender_filter ?? ""}
+                          placeholder="z.B. @chef.de"
+                          onChange={(e) =>
+                            updateChainMutation.mutate({ id: chain.id, input: { sender_filter: e.target.value || null } })
+                          }
+                        />
+                      </label>
+                      <label>
+                        Absender-Modus
+                        <select
+                          value={chain.sender_filter_mode}
+                          onChange={(e) =>
+                            updateChainMutation.mutate({
+                              id: chain.id,
+                              input: { sender_filter_mode: e.target.value as "contains" | "regex" },
+                            })
+                          }
+                        >
+                          <option value="contains">enthält (Groß-/Kleinschreibung egal)</option>
+                          <option value="regex">REGEX</option>
+                        </select>
+                      </label>
+                      <label>
+                        Betreff (REGEX)
+                        <input
+                          value={chain.subject_regex ?? ""}
+                          placeholder="z.B. ^Rechnung"
+                          onChange={(e) =>
+                            updateChainMutation.mutate({ id: chain.id, input: { subject_regex: e.target.value || null } })
+                          }
+                        />
+                      </label>
+                      <label>
+                        Body (REGEX)
+                        <input
+                          value={chain.body_regex ?? ""}
+                          placeholder="z.B. Betrag: \d+"
+                          onChange={(e) =>
+                            updateChainMutation.mutate({ id: chain.id, input: { body_regex: e.target.value || null } })
+                          }
+                        />
+                      </label>
+                      <p className="hint">
+                        Leere Felder werden ignoriert. Eine Body-Bedingung löst beim Trigger eine zusätzliche
+                        IMAP-Abfrage aus, um den Mailtext zu laden.
+                      </p>
+                    </div>
+
                     <button type="button" onClick={() => deleteChainMutation.mutate(chain.id)}>
                       Kette löschen
                     </button>

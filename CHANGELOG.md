@@ -5,6 +5,30 @@ Format angelehnt an [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ## [Unreleased]
 
+### Hinzugefügt
+
+- **Live-Push (IMAP IDLE)**: Konten können jetzt per IMAP IDLE (RFC 2177) sofort auf
+  eingehende Nachrichten reagieren, statt im festen Intervall abgefragt zu werden. Neu pro
+  Konto umschaltbar (Feld `use_idle`: Standard/An/Aus) mit globalem Fallback
+  (`DEFAULT_USE_IDLE`). Der Worker hält je aktivem IDLE-Konto eine Push-Verbindung offen
+  (`worker/worker/idle_watcher.py`); bei Server-Aktivität ruft er den bestehenden
+  `poll_account`-Pfad auf, sodass Trigger-, Logging- und Ketten-Logik unverändert bleiben.
+  Ein seltener Sicherheits-Poll (`IDLE_SAFETY_POLL_SECONDS`, Standard 900s) läuft weiter,
+  und Server ohne IDLE-Unterstützung fallen automatisch auf zeitgesteuertes Polling zurück.
+  IDLE wird vor dem ~29-Min-Server-Timeout neu ausgehandelt (`IDLE_REFRESH_SECONDS`),
+  Verbindungsabbrüche werden mit exponentiellem Backoff neu aufgebaut. Neue Abhängigkeit
+  `imapclient`; Migration `0003` fügt die Spalte `accounts.use_idle` hinzu.
+- **Zeitsteuerung für Aktionsketten**: pro Kette optional ein Zeitfenster (Von/Bis),
+  in dem die Kette ausgeführt werden darf; Fenster über Mitternacht (z.B. 22:00–06:00)
+  werden unterstützt. Ausgewertet gegen eine konfigurierbare Zeitzone (`APP_TIMEZONE`,
+  Standard `UTC`).
+- **Bedingungen für Aktionsketten**: pro Kette optionale Filter auf die auslösende
+  Mail – Absender (Modus „enthält“ oder REGEX), Betreff-REGEX und Body-REGEX – wahlweise
+  per UND (alle) oder ODER (eine) verknüpft; leere Felder werden ignoriert. Der Mailtext
+  wird nur bei gesetzter Body-Bedingung zusätzlich per IMAP geladen. Durch Zeitfenster
+  oder Bedingungen übersprungene Ketten werden im Log als `chain_skipped` vermerkt.
+  Migration `0004` fügt die Spalten auf `action_chains` hinzu.
+
 ### Behoben
 
 - `.gitattributes` ergänzt, das `*.sh` auf LF-Zeilenenden festlegt. Ohne diese Datei

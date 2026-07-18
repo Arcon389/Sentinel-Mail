@@ -37,6 +37,23 @@ class ActionChain(Base):
     # reaches zero unread. See worker.chain_executor.execute_chain.
     loop_infinite: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
+    # Time-window gate: when enabled, the chain only runs if the current time
+    # (in the configured APP_TIMEZONE) lies within [time_start, time_end).
+    # Times are stored as "HH:MM"; a window with time_start > time_end spans
+    # midnight. See worker.chain_matcher.is_within_time_window.
+    time_window_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    time_start: Mapped[str | None] = mapped_column(String(5), nullable=True)
+    time_end: Mapped[str | None] = mapped_column(String(5), nullable=True)
+
+    # Condition gate: optional filters on the triggering mail. "all" (AND) or
+    # "any" (OR) determines how the set conditions combine. Empty filters are
+    # ignored. See worker.chain_matcher.matches_conditions.
+    condition_match: Mapped[str] = mapped_column(String(3), nullable=False, default="all")
+    sender_filter: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    sender_filter_mode: Mapped[str] = mapped_column(String(10), nullable=False, default="contains")
+    subject_regex: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    body_regex: Mapped[str | None] = mapped_column(String(500), nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(server_default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now(), nullable=False)
 

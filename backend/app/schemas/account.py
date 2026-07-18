@@ -12,6 +12,7 @@ class AccountBase(BaseModel):
     username: str = Field(min_length=1, max_length=255)
     folder: str = Field(default="INBOX", min_length=1, max_length=255)
     poll_interval_seconds: int | None = Field(default=None, ge=5)
+    use_idle: bool | None = None
     is_active: bool = True
 
 
@@ -28,6 +29,7 @@ class AccountUpdate(BaseModel):
     password: str | None = Field(default=None, min_length=1)
     folder: str | None = Field(default=None, min_length=1, max_length=255)
     poll_interval_seconds: int | None = Field(default=None, ge=5)
+    use_idle: bool | None = None
     is_active: bool | None = None
 
 
@@ -59,3 +61,4 @@ class TestConnectionResult(BaseModel):
 
 class AccountDefaults(BaseModel):
     default_poll_interval_seconds: int
+    default_use_idle: bool

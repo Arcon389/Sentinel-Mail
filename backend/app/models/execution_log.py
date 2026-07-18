@@ -22,6 +22,7 @@ class EventType(str, enum.Enum):
     STEP_FAILED = "step_failed"
     CHAIN_COMPLETED = "chain_completed"
     CHAIN_ABORTED = "chain_aborted"
+    CHAIN_SKIPPED = "chain_skipped"
     POLL_ERROR = "poll_error"
 
 

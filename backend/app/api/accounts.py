@@ -64,7 +64,11 @@ def create_account(payload: AccountCreate, db: Session = Depends(get_db)) -> Acc
 
 @router.get("/defaults", response_model=AccountDefaults)
 def get_account_defaults() -> AccountDefaults:
-    return AccountDefaults(default_poll_interval_seconds=get_settings().default_poll_interval_seconds)
+    settings = get_settings()
+    return AccountDefaults(
+        default_poll_interval_seconds=settings.default_poll_interval_seconds,
+        default_use_idle=settings.default_use_idle,
+    )
 
 
 @router.get("/{account_id}", response_model=AccountWithState)

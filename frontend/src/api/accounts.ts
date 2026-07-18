@@ -15,6 +15,7 @@ export interface Account {
   username: string;
   folder: string;
   poll_interval_seconds: number | null;
+  use_idle: boolean | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -31,6 +32,7 @@ export interface AccountInput {
   password?: string;
   folder: string;
   poll_interval_seconds: number | null;
+  use_idle: boolean | null;
   is_active: boolean;
 }
 
@@ -41,6 +43,7 @@ export interface TestConnectionResult {
 
 export interface AccountDefaults {
   default_poll_interval_seconds: number;
+  default_use_idle: boolean;
 }
 
 export const accountsApi = {

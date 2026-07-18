@@ -4,6 +4,8 @@ export type StepType = "rest_call" | "webhook" | "send_email" | "print" | "pause
 export type OnError = "abort_chain" | "continue";
 export type BodyType = "json_raw" | "json_keyvalue" | "form_urlencoded";
 export type TriggerType = "unread_new" | "inbox_zero";
+export type ConditionMatch = "all" | "any";
+export type SenderFilterMode = "contains" | "regex";
 
 export interface KeyValue {
   key: string;
@@ -56,6 +58,14 @@ export interface ActionChain {
   loop_pause_seconds: number;
   loop_max_iterations: number;
   loop_infinite: boolean;
+  time_window_enabled: boolean;
+  time_start: string | null;
+  time_end: string | null;
+  condition_match: ConditionMatch;
+  sender_filter_mode: SenderFilterMode;
+  sender_filter: string | null;
+  subject_regex: string | null;
+  body_regex: string | null;
   created_at: string;
   updated_at: string;
   steps: ChainStep[];
@@ -70,6 +80,14 @@ export interface ActionChainInput {
   loop_pause_seconds: number;
   loop_max_iterations: number;
   loop_infinite: boolean;
+  time_window_enabled: boolean;
+  time_start: string | null;
+  time_end: string | null;
+  condition_match: ConditionMatch;
+  sender_filter_mode: SenderFilterMode;
+  sender_filter: string | null;
+  subject_regex: string | null;
+  body_regex: string | null;
 }
 
 export interface TestSendResult {

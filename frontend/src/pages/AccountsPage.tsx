@@ -13,8 +13,15 @@ const emptyForm: AccountInput = {
   password: "",
   folder: "INBOX",
   poll_interval_seconds: null,
+  use_idle: null,
   is_active: true,
 };
+
+// Tri-state <select> value <-> use_idle (null = global default).
+const useIdleToSelect = (value: boolean | null): string =>
+  value === null ? "default" : value ? "on" : "off";
+const selectToUseIdle = (value: string): boolean | null =>
+  value === "default" ? null : value === "on";
 
 export function AccountsPage() {
   const queryClient = useQueryClient();
@@ -72,6 +79,7 @@ export function AccountsPage() {
       password: "",
       folder: account.folder,
       poll_interval_seconds: account.poll_interval_seconds,
+      use_idle: account.use_idle,
       is_active: account.is_active,
     });
   };
@@ -155,6 +163,25 @@ export function AccountsPage() {
           <p className="hint">
             Leer lassen, um das globale Standard-Intervall zu verwenden
             {defaults ? ` (aktuell ${defaults.default_poll_interval_seconds} Sekunden, per DEFAULT_POLL_INTERVAL_SECONDS in .env einstellbar)` : ""}.
+          </p>
+          <label>
+            Live-Push (IMAP IDLE)
+            <select
+              value={useIdleToSelect(form.use_idle)}
+              onChange={(e) => setForm({ ...form, use_idle: selectToUseIdle(e.target.value) })}
+            >
+              <option value="default">
+                Standard{defaults ? ` (${defaults.default_use_idle ? "an" : "aus"})` : ""}
+              </option>
+              <option value="on">An – sofort auf neue Mails reagieren</option>
+              <option value="off">Aus – nur zeitgesteuertes Polling</option>
+            </select>
+          </label>
+          <p className="hint">
+            Bei „An" hält der Worker eine Verbindung offen und reagiert live auf eingehende
+            Nachrichten (IMAP IDLE), statt im Poll-Intervall abzufragen. Ein seltener
+            Sicherheits-Poll läuft weiterhin. Server ohne IDLE-Unterstützung fallen automatisch
+            auf Polling zurück.
           </p>
           <label>
             <input

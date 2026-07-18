@@ -6,14 +6,16 @@ from datetime import datetime, timezone
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
+from app.config import get_settings
 from app.database import SessionLocal
 from app.models.account import Account
 from app.models.account_state import AccountState
 from app.models.action_chain import ActionChain, TriggerType
 from app.models.execution_log import EventType, ExecutionLog, LogLevel
 from app.security.crypto import decrypt
-from app.services.imap_client import AccountSnapshot, ImapConnectionError, fetch_snapshot
+from app.services.imap_client import AccountSnapshot, ImapConnectionError, fetch_full_message, fetch_snapshot
 from worker.chain_executor import execute_chain
+from worker.chain_matcher import chain_needs_body, is_within_time_window, matches_conditions, resolve_timezone
 from worker.trigger_detector import detect_transitions
 
 logger = logging.getLogger("sentinel_mail.worker.poller")
@@ -26,6 +28,23 @@ TriggerHandler = Callable[[Session, Account, TriggerType, AccountSnapshot], None
 # infinite loop - of the *same* chain is still in flight.
 _running_chain_ids: set = set()
 _running_lock = threading.Lock()
+
+# Per-account locks serialising the read-detect-write-commit section of
+# poll_account. Since an account can now be polled from two sources at once -
+# the IDLE watcher (on push) and the tick loop's safety poll - two concurrent
+# polls could otherwise both observe the same unread-count transition before
+# either writes back the new baseline, double-dispatching a chain.
+_account_locks: dict = {}
+_account_locks_guard = threading.Lock()
+
+
+def _account_lock(account_id) -> threading.Lock:
+    with _account_locks_guard:
+        lock = _account_locks.get(account_id)
+        if lock is None:
+            lock = threading.Lock()
+            _account_locks[account_id] = lock
+        return lock
 
 
 def _run_chain_in_background(chain_id, account_id, context: dict, trigger_uid: str | None) -> None:
@@ -58,6 +77,37 @@ def _run_chain_in_background(chain_id, account_id, context: dict, trigger_uid: s
     threading.Thread(target=_run, daemon=True, name=f"chain-exec-{chain_id}").start()
 
 
+def _skip_chain(db: Session, account: Account, chain: ActionChain, reason: str) -> None:
+    logger.info("Skipping chain '%s' for account '%s': %s", chain.name, account.name, reason)
+    db.add(
+        ExecutionLog(
+            account_id=account.id,
+            chain_id=chain.id,
+            step_id=None,
+            level=LogLevel.INFO,
+            event_type=EventType.CHAIN_SKIPPED,
+            message=f"Kette '{chain.name}' übersprungen: {reason}",
+        )
+    )
+    db.commit()
+
+
+def _load_body_if_needed(account: Account, chains, snapshot: AccountSnapshot) -> str | None:
+    """Fetches the triggering mail's body once, only if any chain needs it."""
+    if not (snapshot.latest_uid and any(chain_needs_body(c) for c in chains)):
+        return None
+    try:
+        password = decrypt(account.encrypted_password)
+        body, _ = fetch_full_message(
+            account.imap_host, account.imap_port, account.use_ssl,
+            account.username, password, account.folder, snapshot.latest_uid,
+        )
+        return body
+    except ImapConnectionError as exc:
+        logger.warning("Could not fetch body for body-condition on account '%s': %s", account.name, exc)
+        return None
+
+
 def _default_trigger_handler(db: Session, account: Account, trigger_type: TriggerType, snapshot: AccountSnapshot) -> None:
     matching_chains = db.scalars(
         select(ActionChain)
@@ -76,11 +126,27 @@ def _default_trigger_handler(db: Session, account: Account, trigger_type: Trigge
         "sender": snapshot.latest_sender or "",
     }
 
+    now = datetime.now(resolve_timezone(get_settings().app_timezone))
+    body = _load_body_if_needed(account, matching_chains, snapshot)
+
     for chain in matching_chains:
+        if not is_within_time_window(chain, now):
+            _skip_chain(db, account, chain, "außerhalb des konfigurierten Zeitfensters")
+            continue
+        if not matches_conditions(chain, context["sender"], context["subject"], body):
+            _skip_chain(db, account, chain, "Bedingung(en) nicht erfüllt")
+            continue
         _run_chain_in_background(chain.id, account.id, context, snapshot.latest_uid)
 
 
 def poll_account(db: Session, account: Account, on_trigger: TriggerHandler = _default_trigger_handler) -> None:
+    # Serialise per account so a concurrent IDLE-push poll and safety poll of the
+    # same account can't both detect (and dispatch) the same transition.
+    with _account_lock(account.id):
+        _poll_account_locked(db, account, on_trigger)
+
+
+def _poll_account_locked(db: Session, account: Account, on_trigger: TriggerHandler) -> None:
     state = db.get(AccountState, account.id)
     if state is None:
         state = AccountState(account_id=account.id)
