@@ -1,8 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { type Account, type AccountInput, accountsApi } from "../api/accounts";
 import { ApiError } from "../api/client";
 import { AppShell } from "../components/common/AppShell";
+import { useConfirm } from "../components/common/ConfirmDialog";
 
 const emptyForm: AccountInput = {
   name: "",
@@ -24,6 +26,8 @@ const selectToUseIdle = (value: string): boolean | null =>
   value === "default" ? null : value === "on";
 
 export function AccountsPage() {
+  const { t } = useTranslation();
+  const confirm = useConfirm();
   const queryClient = useQueryClient();
   const { data: accounts, isLoading } = useQuery({ queryKey: ["accounts"], queryFn: accountsApi.list });
   const { data: defaults } = useQuery({ queryKey: ["account-defaults"], queryFn: accountsApi.defaults });
@@ -39,7 +43,7 @@ export function AccountsPage() {
       queryClient.invalidateQueries({ queryKey: ["accounts"] });
       setForm(emptyForm);
     },
-    onError: (err) => setFormError(err instanceof ApiError ? err.message : "Speichern fehlgeschlagen"),
+    onError: (err) => setFormError(err instanceof ApiError ? err.message : t("accounts.saveFailed")),
   });
 
   const updateMutation = useMutation({
@@ -49,7 +53,7 @@ export function AccountsPage() {
       setEditingId(null);
       setForm(emptyForm);
     },
-    onError: (err) => setFormError(err instanceof ApiError ? err.message : "Speichern fehlgeschlagen"),
+    onError: (err) => setFormError(err instanceof ApiError ? err.message : t("accounts.saveFailed")),
   });
 
   const deleteMutation = useMutation({
@@ -89,28 +93,28 @@ export function AccountsPage() {
     // an existing account reuses its stored password server-side. Guard the
     // new-account case so an empty password shows a hint instead of a raw 422.
     if (!editingId && !form.password) {
-      setTestResult("✗ Bitte zuerst ein Passwort eingeben, um die Verbindung zu testen.");
+      setTestResult(`✗ ${t("accounts.testEnterPassword")}`);
       return;
     }
-    setTestResult("Teste Verbindung...");
+    setTestResult(t("accounts.testing"));
     try {
       const result = editingId ? await accountsApi.testExisting(editingId) : await accountsApi.testNew(form);
       setTestResult(result.success ? `✓ ${result.message}` : `✗ ${result.message}`);
     } catch (err) {
-      setTestResult(err instanceof ApiError ? `✗ ${err.message}` : "✗ Test fehlgeschlagen");
+      setTestResult(err instanceof ApiError ? `✗ ${err.message}` : `✗ ${t("accounts.testFailed")}`);
     }
   };
 
   return (
-    <AppShell title="IMAP-Konten">
+    <AppShell title={t("nav.accounts")}>
       <form onSubmit={onSubmit} className="account-form">
-          <h2>{editingId ? "Konto bearbeiten" : "Neues Konto"}</h2>
+          <h2>{editingId ? t("accounts.editAccount") : t("accounts.newAccount")}</h2>
           <label>
-            Name
+            {t("accounts.name")}
             <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
           </label>
           <label>
-            IMAP-Host
+            {t("accounts.imapHost")}
             <input
               value={form.imap_host}
               onChange={(e) => setForm({ ...form, imap_host: e.target.value })}
@@ -118,7 +122,7 @@ export function AccountsPage() {
             />
           </label>
           <label>
-            Port
+            {t("accounts.port")}
             <input
               type="number"
               value={form.imap_port}
@@ -132,10 +136,10 @@ export function AccountsPage() {
               checked={form.use_ssl}
               onChange={(e) => setForm({ ...form, use_ssl: e.target.checked })}
             />
-            SSL/TLS
+            {t("accounts.ssl")}
           </label>
           <label>
-            Benutzername
+            {t("accounts.username")}
             <input
               value={form.username}
               onChange={(e) => setForm({ ...form, username: e.target.value })}
@@ -143,7 +147,7 @@ export function AccountsPage() {
             />
           </label>
           <label>
-            Passwort {editingId && "(leer lassen = unverändert)"}
+            {t("accounts.password")} {editingId && t("accounts.passwordUnchangedHint")}
             <input
               type="password"
               value={form.password}
@@ -152,15 +156,19 @@ export function AccountsPage() {
             />
           </label>
           <label>
-            Ordner
+            {t("accounts.folder")}
             <input value={form.folder} onChange={(e) => setForm({ ...form, folder: e.target.value })} required />
           </label>
           <label>
-            Poll-Intervall (Sekunden)
+            {t("accounts.pollInterval")}
             <input
               type="number"
               min={5}
-              placeholder={defaults ? `${defaults.default_poll_interval_seconds} (global, Standard)` : "global"}
+              placeholder={
+                defaults
+                  ? t("accounts.pollPlaceholderDefault", { seconds: defaults.default_poll_interval_seconds })
+                  : t("accounts.pollPlaceholderGlobal")
+              }
               value={form.poll_interval_seconds ?? ""}
               onChange={(e) =>
                 setForm({ ...form, poll_interval_seconds: e.target.value ? Number(e.target.value) : null })
@@ -168,43 +176,45 @@ export function AccountsPage() {
             />
           </label>
           <p className="hint">
-            Leer lassen, um das globale Standard-Intervall zu verwenden
-            {defaults ? ` (aktuell ${defaults.default_poll_interval_seconds} Sekunden, per DEFAULT_POLL_INTERVAL_SECONDS in .env einstellbar)` : ""}.
+            {t("accounts.pollHint", {
+              suffix: defaults
+                ? t("accounts.pollHintDefaultSuffix", { seconds: defaults.default_poll_interval_seconds })
+                : "",
+            })}
           </p>
           <label>
-            Live-Push (IMAP IDLE)
+            {t("accounts.livePush")}
             <select
               value={useIdleToSelect(form.use_idle)}
               onChange={(e) => setForm({ ...form, use_idle: selectToUseIdle(e.target.value) })}
             >
               <option value="default">
-                Standard{defaults ? ` (${defaults.default_use_idle ? "an" : "aus"})` : ""}
+                {defaults
+                  ? t("accounts.livePushDefaultWith", {
+                      state: defaults.default_use_idle ? t("accounts.on") : t("accounts.off"),
+                    })
+                  : t("accounts.livePushDefault")}
               </option>
-              <option value="on">An – sofort auf neue Mails reagieren</option>
-              <option value="off">Aus – nur zeitgesteuertes Polling</option>
+              <option value="on">{t("accounts.livePushOn")}</option>
+              <option value="off">{t("accounts.livePushOff")}</option>
             </select>
           </label>
-          <p className="hint">
-            Bei „An" hält der Worker eine Verbindung offen und reagiert live auf eingehende
-            Nachrichten (IMAP IDLE), statt im Poll-Intervall abzufragen. Ein seltener
-            Sicherheits-Poll läuft weiterhin. Server ohne IDLE-Unterstützung fallen automatisch
-            auf Polling zurück.
-          </p>
+          <p className="hint">{t("accounts.livePushHint")}</p>
           <label>
             <input
               type="checkbox"
               checked={form.is_active}
               onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
             />
-            Aktiv (Überwachung läuft)
+            {t("accounts.activeMonitoring")}
           </label>
           {formError && <p className="error">{formError}</p>}
           {testResult && <p>{testResult}</p>}
           <div className="button-row">
             <button type="button" onClick={onTest}>
-              Verbindung testen
+              {t("accounts.testConnection")}
             </button>
-            <button type="submit">{editingId ? "Speichern" : "Anlegen"}</button>
+            <button type="submit">{editingId ? t("common.save") : t("common.create")}</button>
             {editingId && (
               <button
                 type="button"
@@ -213,22 +223,22 @@ export function AccountsPage() {
                   setForm(emptyForm);
                 }}
               >
-                Abbrechen
+                {t("common.cancel")}
               </button>
             )}
           </div>
         </form>
 
-        <h2>Konten</h2>
-        {isLoading && <p>Lädt...</p>}
+        <h2>{t("accounts.accountsHeading")}</h2>
+        {isLoading && <p>{t("common.loading")}</p>}
         <table>
           <thead>
             <tr>
-              <th>Name</th>
-              <th>Host</th>
-              <th>Aktiv</th>
-              <th>Ungelesen</th>
-              <th>Letzter Check</th>
+              <th>{t("accounts.name")}</th>
+              <th>{t("accounts.host")}</th>
+              <th>{t("accounts.active")}</th>
+              <th>{t("accounts.unread")}</th>
+              <th>{t("accounts.lastCheck")}</th>
               <th></th>
             </tr>
           </thead>
@@ -239,12 +249,26 @@ export function AccountsPage() {
                 <td>
                   {account.imap_host}:{account.imap_port}
                 </td>
-                <td>{account.is_active ? "ja" : "nein"}</td>
+                <td>{account.is_active ? t("common.yes") : t("common.no")}</td>
                 <td>{account.state?.last_unread_count ?? "–"}</td>
                 <td>{account.state?.last_checked_at ? new Date(account.state.last_checked_at).toLocaleString() : "–"}</td>
                 <td>
-                  <button onClick={() => onEdit(account)}>Bearbeiten</button>
-                  <button onClick={() => deleteMutation.mutate(account.id)}>Löschen</button>
+                  <button onClick={() => onEdit(account)}>{t("common.edit")}</button>
+                  <button
+                    className="danger-button"
+                    onClick={async () => {
+                      if (
+                        await confirm({
+                          message: t("accounts.deleteAccountConfirm", { name: account.name }),
+                          danger: true,
+                        })
+                      ) {
+                        deleteMutation.mutate(account.id);
+                      }
+                    }}
+                  >
+                    {t("common.delete")}
+                  </button>
                 </td>
               </tr>
             ))}

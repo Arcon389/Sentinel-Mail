@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { Trans, useTranslation } from "react-i18next";
 import type { BodyType, HttpStepConfig, KeyValue, StepType } from "../../api/actionChains";
 import { KeyValueEditor } from "./KeyValueEditor";
 import { PlaceholderAutocomplete } from "./PlaceholderAutocomplete";
@@ -13,13 +14,14 @@ interface Props {
 
 type FocusTarget = { kind: "url" } | { kind: "body_template" } | { kind: "header_value"; index: number } | { kind: "field_value"; index: number };
 
-const BODY_TYPE_OPTIONS: { value: BodyType; label: string }[] = [
-  { value: "json_raw", label: "JSON (Rohtext)" },
-  { value: "json_keyvalue", label: "JSON (Name/Value)" },
-  { value: "form_urlencoded", label: "form-urlencoded (Name/Value)" },
+const BODY_TYPE_OPTIONS: { value: BodyType; labelKey: string }[] = [
+  { value: "json_raw", labelKey: "restForm.bodyTypeJsonRaw" },
+  { value: "json_keyvalue", labelKey: "restForm.bodyTypeJsonKeyValue" },
+  { value: "form_urlencoded", labelKey: "restForm.bodyTypeFormUrlencoded" },
 ];
 
 export function RestStepForm({ stepType, config, onChange, accountId }: Props) {
+  const { t } = useTranslation();
   const [focusTarget, setFocusTarget] = useState<FocusTarget | null>(null);
   const urlRef = useRef<HTMLInputElement>(null);
   const bodyTemplateRef = useRef<HTMLTextAreaElement>(null);
@@ -32,7 +34,7 @@ export function RestStepForm({ stepType, config, onChange, accountId }: Props) {
     const hasExistingData =
       (config.body_type === "json_raw" && config.body_template) ||
       (config.body_type !== "json_raw" && (config.body_fields?.length ?? 0) > 0);
-    if (hasExistingData && !window.confirm("Beim Wechsel des Body-Typs gehen die aktuellen Body-Daten verloren. Fortfahren?")) {
+    if (hasExistingData && !window.confirm(t("restForm.confirmBodyTypeChange"))) {
       return;
     }
     if (newType === "json_raw") {
@@ -87,24 +89,25 @@ export function RestStepForm({ stepType, config, onChange, accountId }: Props) {
         />
       </div>
 
-      <div>
-        <label>Header</label>
+      <details className="rest-step-section">
+        <summary>{t("restForm.headersSummary")}</summary>
         {stepType === "webhook" && headers.length === 0 && (
           <p className="hint">
-            Tipp: für Webhooks wird oft ein Signatur-Header erwartet, z.B. <code>X-Signature</code>.
+            <Trans i18nKey="restForm.webhookHint" components={{ code: <code /> }} />
           </p>
         )}
         <KeyValueEditor
           rows={headers}
           onChange={(rows) => onChange({ ...config, headers: rows })}
-          keyPlaceholder="Header-Name"
-          valuePlaceholder="Wert"
+          keyPlaceholder={t("restForm.headerNamePlaceholder")}
+          valuePlaceholder={t("restForm.valuePlaceholder")}
           onValueFocus={(index) => setFocusTarget({ kind: "header_value", index })}
         />
-      </div>
+      </details>
 
-      <div>
-        <label>Body-Typ</label>
+      <details className="rest-step-section">
+        <summary>{t("restForm.bodySummary")}</summary>
+        <label>{t("restForm.bodyType")}</label>
         <div className="body-type-selector">
           {BODY_TYPE_OPTIONS.map((opt) => (
             <label key={opt.value} className="radio-option">
@@ -114,7 +117,7 @@ export function RestStepForm({ stepType, config, onChange, accountId }: Props) {
                 checked={config.body_type === opt.value}
                 onChange={() => onBodyTypeChange(opt.value)}
               />
-              {opt.label}
+              {t(opt.labelKey)}
             </label>
           ))}
         </div>
@@ -136,7 +139,7 @@ export function RestStepForm({ stepType, config, onChange, accountId }: Props) {
             onValueFocus={(index) => setFocusTarget({ kind: "field_value", index })}
           />
         )}
-      </div>
+      </details>
 
       <PlaceholderAutocomplete onInsert={insertPlaceholder} />
 

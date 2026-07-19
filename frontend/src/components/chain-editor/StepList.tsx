@@ -1,5 +1,6 @@
 import { DndContext, type DragEndEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { useTranslation } from "react-i18next";
 import type { ChainStep, OnError } from "../../api/actionChains";
 import { StepCard } from "./StepCard";
 
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export function StepList({ steps, accountId, onReorder, onStepChange, onStepErrorChange, onStepDelete }: Props) {
+  const { t } = useTranslation();
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
   const onDragEnd = (event: DragEndEvent) => {
@@ -29,7 +31,7 @@ export function StepList({ steps, accountId, onReorder, onStepChange, onStepErro
   };
 
   if (steps.length === 0) {
-    return <p>Noch keine Schritte. Füge unten einen Schritt hinzu.</p>;
+    return <p>{t("stepList.empty")}</p>;
   }
 
   return (

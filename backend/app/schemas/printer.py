@@ -22,6 +22,8 @@ class DiscoveredPrinter(BaseModel):
     host: str
     port: int
     uri: str
+    make_and_model: str | None = None
+    device_class: str | None = None
 
 
 class PrinterCreate(BaseModel):
@@ -33,6 +35,7 @@ class PrinterCreate(BaseModel):
 
 class PrinterUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=255)
+    connection_uri: str | None = Field(default=None, min_length=1, max_length=500)
     is_active: bool | None = None
     default_options: PrinterOptions | None = None
 

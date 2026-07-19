@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { actionChainsApi } from "../../api/actionChains";
 
 interface Props {
@@ -6,6 +7,7 @@ interface Props {
 }
 
 export function PlaceholderAutocomplete({ onInsert }: Props) {
+  const { t } = useTranslation();
   const { data: placeholders } = useQuery({
     queryKey: ["placeholders"],
     queryFn: actionChainsApi.placeholders,
@@ -16,7 +18,7 @@ export function PlaceholderAutocomplete({ onInsert }: Props) {
 
   return (
     <div className="placeholder-list">
-      <span className="placeholder-list-label">Platzhalter:</span>
+      <span className="placeholder-list-label">{t("placeholderAutocomplete.label")}</span>
       {placeholders.map((p) => (
         <button
           key={p.key}

@@ -44,11 +44,15 @@ Startreihenfolge: `db` (mit Healthcheck) → `web` (führt `alembic upgrade head
 ## 3. Erste Schritte in der Web-Oberfläche
 
 1. **Setup-Assistent** (falls kein `INITIAL_ADMIN_*` gesetzt wurde): Admin-Account anlegen.
-2. **IMAP-Konten** (`/accounts`): Konto anlegen, "Verbindung testen" nutzen, um Zugangsdaten zu prüfen.
-3. **Drucker** (`/printers`, optional): über den Einrichtungsassistenten einen Drucker verbinden (Discovery oder manuelle IPP-URI), Fähigkeiten prüfen, Standardoptionen setzen, Testseite drucken.
-4. **Aktionsketten** (`/chains`): pro Konto eine oder mehrere Ketten anlegen, Trigger wählen, Schritte hinzufügen (REST-Call/Webhook mit Body-Typ-Auswahl und "Test senden", E-Mail, Drucken, Pause), Reihenfolge per Drag&Drop anpassen.
-5. **Logs** (`/logs`): Ausführungen nach Konto/Status filtern.
-6. **Benutzer** (`/users`, nur Admins): weitere Benutzer-Accounts anlegen/verwalten.
+2. **Onboarding-Assistent** (`/onboarding`): erscheint einmalig direkt nach der ersten
+   Anmeldung und führt durch IMAP-Konto → SMTP-Prüfung → Drucker (optional) → erste
+   Aktionskette. Jeder Schritt ist überspringbar; danach erscheint er nicht wieder. Die
+   folgenden Punkte lassen sich auch jederzeit einzeln über die Navigation erledigen.
+3. **IMAP-Konten** (`/accounts`): Konto anlegen, "Verbindung testen" nutzen, um Zugangsdaten zu prüfen.
+4. **Drucker** (`/printers`, optional): über den Einrichtungsassistenten einen Drucker verbinden, Fähigkeiten prüfen, Standardoptionen setzen, Testseite drucken. Der erste Schritt bietet drei Wege: **Netzwerk durchsuchen** (Discovery via CUPS, mDNS + SNMP), **Per IP hinzufügen** (nur IP/Hostname + Protokoll IPP/Raw-Socket/LPD, URI wird automatisch gebaut) oder **Erweitert** (vollständige Geräte-URI von Hand).
+5. **Aktionsketten** (`/chains`): pro Konto eine oder mehrere Ketten anlegen, Trigger wählen, Schritte hinzufügen (REST-Call/Webhook mit Body-Typ-Auswahl und "Test senden", E-Mail, Drucken, Pause), Reihenfolge per Drag&Drop anpassen.
+6. **Logs** (`/logs`): Ausführungen nach Konto/Status filtern.
+7. **Benutzer** (`/users`, nur Admins): weitere Benutzer-Accounts anlegen/verwalten.
 
 ## 4. Entwicklung ohne vollen Compose-Stack
 
@@ -77,6 +81,6 @@ pytest ../tests
 
 ## 5. Architekturhinweise
 
-- **CUPS**: Sentinel Mail bringt einen eigenen CUPS-Container mit (`cups/`), der Druckjobs per IPP an echte Netzwerkdrucker weiterleitet. Der Container muss Netzwerkzugriff auf die Zieldrucker haben — je nach Umgebung ggf. `network_mode: host` für den `cups`-Service in `docker-compose.yml` verwenden, falls Drucker im selben LAN wie der Docker-Host, aber nicht im Docker-Bridge-Netz erreichbar sind.
+- **CUPS**: Sentinel Mail bringt einen eigenen CUPS-Container mit (`cups/`), der Druckjobs per IPP an echte Netzwerkdrucker weiterleitet. Der Container muss Netzwerkzugriff auf die Zieldrucker haben — deshalb ist der `cups`-Service in `docker-compose.yml` standardmäßig auf `network_mode: host` gesetzt (statt eines `ports:`-Mappings). Auch die **Drucker-Discovery** (mDNS + SNMP) läuft in diesem Container; am Docker-Bridge-Netz bleiben mDNS-Multicast und SNMP-Broadcasts im Container-Subnetz hängen und erreichen LAN-Drucker (z.B. `192.168.x.x`) nicht — mit `network_mode: host` auf einem **Linux-Host** dagegen schon. **Einschränkung Docker Desktop (Windows/macOS):** dort bindet `network_mode: host` an die interne Linux-VM, nicht ans physische LAN — die automatische Suche findet dann meist trotzdem nichts. In allen Fällen ohne funktionierende Discovery (auch bei VLANs/WLAN-Client-Isolation oder Nur-mDNS-Druckern) bleibt „Per IP hinzufügen" der zuverlässige Weg — CUPS muss den Drucker nur zum Drucken per IP erreichen, nicht per Broadcast auffinden.
 - **Verschlüsselung**: IMAP-Passwörter werden mit Fernet (symmetrisch, Schlüssel aus `ENCRYPTION_KEY`) verschlüsselt in der DB gespeichert. Ein Schlüsselwechsel macht bestehende gespeicherte Passwörter unlesbar — vorher alle Konten neu anlegen oder Passwörter neu eingeben.
 - **Worker vs. Web**: Der Worker-Prozess ist komplett getrennt vom Web-Prozess und pollt IMAP-Konten unabhängig; ein Absturz/Neustart des Workers beeinträchtigt die Web-Oberfläche nicht und umgekehrt.

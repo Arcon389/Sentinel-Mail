@@ -6,6 +6,7 @@ import { ActionChainEditorPage } from "./pages/ActionChainEditorPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { LoginPage } from "./pages/LoginPage";
 import { LogsPage } from "./pages/LogsPage";
+import { OnboardingPage } from "./pages/OnboardingPage";
 import { PrintersPage } from "./pages/PrintersPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import { SetupWizardPage } from "./pages/SetupWizardPage";
@@ -18,6 +19,14 @@ export function App() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/setup" element={<SetupWizardPage />} />
+          <Route
+            path="/onboarding"
+            element={
+              <ProtectedRoute>
+                <OnboardingPage />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/"
             element={

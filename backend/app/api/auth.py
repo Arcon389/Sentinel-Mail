@@ -8,7 +8,7 @@ from app.api.deps import get_current_user
 from app.config import get_settings
 from app.database import get_db
 from app.models.user import User, UserRole
-from app.schemas.auth import ChangePasswordRequest, LoginRequest, SetupRequest, UserOut
+from app.schemas.auth import ChangePasswordRequest, LocaleUpdate, LoginRequest, SetupRequest, UserOut
 from app.security.auth import (
     ACCESS_TOKEN_COOKIE_NAME,
     create_access_token,
@@ -73,6 +73,30 @@ def logout(response: Response) -> dict:
 
 @router.get("/me", response_model=UserOut)
 def me(user: User = Depends(get_current_user)) -> User:
+    return user
+
+
+@router.post("/complete-onboarding", response_model=UserOut)
+def complete_onboarding(
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> User:
+    if user.onboarding_completed_at is None:
+        user.onboarding_completed_at = datetime.now(timezone.utc)
+        db.commit()
+        db.refresh(user)
+    return user
+
+
+@router.patch("/me/locale", response_model=UserOut)
+def update_locale(
+    payload: LocaleUpdate,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> User:
+    user.locale = payload.locale
+    db.commit()
+    db.refresh(user)
     return user
 
 

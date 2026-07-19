@@ -26,11 +26,15 @@ in der Datenbank protokolliert und lassen sich in der Web-Oberfläche filtern.
   - Pro Schritt konfigurierbares Fehlerverhalten (Kette abbrechen oder mit dem nächsten
     Schritt fortfahren)
 - **Drucker-Verwaltung**: eigener CUPS-Container, Einrichtungsassistent mit
-  Netzwerk-Discovery (mDNS/Bonjour) oder manueller IPP-URI, Anzeige der
+  Netzwerk-Discovery (via CUPS: mDNS + SNMP), einfacher IP-Eingabe mit
+  Protokollwahl (IPP/Raw-Socket/LPD) oder manueller Geräte-URI, Anzeige der
   Drucker-Fähigkeiten (Duplex, Farbe), Testdruck
 - **Ausführungs-Logs**: durchsuchbar/filterbar nach Konto und Status, mit Paginierung
 - **Benutzerverwaltung**: mehrere Admin-/Benutzer-Konten, Argon2-Passwort-Hashing,
   JWT-Session in httpOnly-Cookie
+- **Mehrsprachige Oberfläche** (i18n): aktuell Deutsch und Englisch, umschaltbar im Profil
+  sowie auf den Login-/Setup-Seiten; die Wahl wird pro Nutzer gespeichert. Weitere Sprachen
+  lassen sich einfach ergänzen (siehe [Projektstruktur](#projektstruktur))
 - Keine Mandantentrennung über die Auth hinaus: Konten, Ketten, Logs und Drucker sind
   global sichtbar für alle angemeldeten Benutzer
 
@@ -65,13 +69,41 @@ Datenbank gespeichert, nie im Klartext.
 3. Frontend: http://localhost:3000
    Beim ersten Aufruf führt ein Setup-Assistent durch die Anlage des ersten
    Admin-Accounts (alternativ `INITIAL_ADMIN_EMAIL`/`INITIAL_ADMIN_PASSWORD` in `.env`
-   setzen, dann existiert der Admin bereits beim ersten Start).
+   setzen, dann existiert der Admin bereits beim ersten Start). Direkt nach der ersten
+   Anmeldung führt ein einmaliger, überspringbarer Onboarding-Assistent durch die
+   Grundeinrichtung (IMAP-Konto → SMTP-Prüfung → Drucker → erste Aktionskette).
 
    Backend-API direkt: http://localhost:8000/api/health
 
 Ausführliche Anleitung inkl. erster Schritte in der Oberfläche, Entwicklung ohne vollen
 Compose-Stack und Architekturhinweisen (CUPS-Netzwerkzugriff, Verschlüsselungs-Key-Rotation):
 siehe [`docs/setup.md`](docs/setup.md).
+
+### Drucker im Netzwerk finden (Discovery & Einschränkungen)
+
+Die Netzwerk-Discovery (mDNS + SNMP) läuft **im `cups`-Container**, nicht im `web`-Container.
+Damit CUPS die Drucker im LAN überhaupt sehen kann, ist der `cups`-Service in
+`docker-compose.yml` auf **`network_mode: host`** gesetzt (kein `ports:`-Mapping — Port 631
+wird dann direkt auf dem Host veröffentlicht). Grund: Am Docker-Bridge-Netz bleiben
+mDNS-Multicast und SNMP-Broadcasts im internen Container-Subnetz hängen und erreichen die
+LAN-Adressen der Drucker (z.B. `192.168.x.x`) nie.
+
+**Einschränkungen:**
+
+- **Docker Desktop (Windows/macOS):** `network_mode: host` bindet dort an die interne
+  Linux-VM (WSL2 bzw. HyperKit), **nicht** an dein physisches LAN. Die automatische Suche
+  findet Drucker im WLAN/LAN daher meist **trotzdem nicht**. Das ist eine bekannte
+  Docker-Desktop-Limitierung, kein Fehler von Sentinel Mail. → Nutze „**Per IP hinzufügen**".
+- **Linux-Host:** `network_mode: host` funktioniert wie erwartet; Discovery und Druck sehen
+  das LAN direkt.
+- **Nur-mDNS-Drucker / gefiltertes SNMP:** Manche Drucker annoncieren ausschließlich per mDNS
+  oder haben SNMP deaktiviert. In segmentierten Netzen (VLANs, WLAN-Client-Isolation,
+  „AP Isolation") wird Multicast oft geblockt — auch dann findet die Suche nichts.
+- **Fallback (immer verfügbar):** Ist die IP bekannt (z.B. `192.168.103.6`), führt „**Per IP
+  hinzufügen**" im Assistenten am zuverlässigsten zum Ziel — CUPS muss den Drucker nur zum
+  **Drucken** per IP erreichen, nicht per Broadcast auffinden. Beispiel-URIs:
+  `ipp://192.168.103.6/ipp/print` (IPP Everywhere), `socket://192.168.103.6:9100`
+  (Raw/JetDirect) oder `lpd://192.168.103.6/queue` (LPD).
 
 ## Entwicklung
 
@@ -88,6 +120,21 @@ Jedes Feature-Modul im Backend folgt dem Muster `models/` (SQLAlchemy) → `sche
 (Pydantic) → `api/` (FastAPI-Router, keine Business-Logik) → `services/` (eigentliche
 Logik). Der Worker (`worker/worker/`) installiert `backend/app` als editable Package
 und teilt sich Models, Schemas und Services mit dem Backend statt sie zu duplizieren.
+
+### Sprache hinzufügen (i18n)
+
+Die Oberfläche nutzt `react-i18next`. Die Übersetzungen liegen als JSON-Kataloge unter
+`frontend/src/i18n/locales/<code>/translation.json`, die verfügbaren Sprachen in der
+Registry `frontend/src/i18n/languages.ts`. Eine neue Sprache hinzufügen:
+
+1. `frontend/src/i18n/locales/<code>/translation.json` anlegen (Struktur aus `de` kopieren
+   und übersetzen — `de` ist die Referenz mit dem vollständigen Schlüsselsatz).
+2. In `languages.ts` einen Eintrag `{ code: "<code>", label: "…" }` ergänzen und den Katalog
+   in `frontend/src/i18n/index.ts` als `resources` registrieren.
+
+Die pro Nutzer gespeicherte Sprache (`users.locale`) validiert das Backend gegen die
+erlaubten Codes in `backend/app/schemas/auth.py` — dort den neuen Code ebenfalls ergänzen.
+Serverseitige Meldungen (z.B. Verbindungstest-Ergebnisse) sind derzeit nicht übersetzt.
 
 ## Changelog
 

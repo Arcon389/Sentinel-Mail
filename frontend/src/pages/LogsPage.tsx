@@ -1,10 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { accountsApi } from "../api/accounts";
 import { logsApi } from "../api/logs";
 import { AppShell } from "../components/common/AppShell";
 
 export function LogsPage() {
+  const { t } = useTranslation();
   const [accountId, setAccountId] = useState("");
   const [level, setLevel] = useState("");
   const [page, setPage] = useState(1);
@@ -18,10 +20,10 @@ export function LogsPage() {
   const totalPages = data ? Math.max(1, Math.ceil(data.total / data.page_size)) : 1;
 
   return (
-    <AppShell title="Logs">
+    <AppShell title={t("nav.logs")}>
         <div className="log-filters">
           <label>
-            Konto
+            {t("logs.account")}
             <select
               value={accountId}
               onChange={(e) => {
@@ -29,7 +31,7 @@ export function LogsPage() {
                 setPage(1);
               }}
             >
-              <option value="">Alle</option>
+              <option value="">{t("common.all")}</option>
               {accounts?.map((a) => (
                 <option key={a.id} value={a.id}>
                   {a.name}
@@ -38,7 +40,7 @@ export function LogsPage() {
             </select>
           </label>
           <label>
-            Status
+            {t("logs.status")}
             <select
               value={level}
               onChange={(e) => {
@@ -46,10 +48,10 @@ export function LogsPage() {
                 setPage(1);
               }}
             >
-              <option value="">Alle</option>
-              <option value="info">Info</option>
-              <option value="warning">Warnung</option>
-              <option value="error">Fehler</option>
+              <option value="">{t("common.all")}</option>
+              <option value="info">{t("logs.info")}</option>
+              <option value="warning">{t("logs.warning")}</option>
+              <option value="error">{t("logs.error")}</option>
             </select>
           </label>
         </div>
@@ -57,10 +59,10 @@ export function LogsPage() {
         <table>
           <thead>
             <tr>
-              <th>Zeit</th>
-              <th>Status</th>
-              <th>Ereignis</th>
-              <th>Nachricht</th>
+              <th>{t("logs.time")}</th>
+              <th>{t("logs.status")}</th>
+              <th>{t("logs.event")}</th>
+              <th>{t("logs.message")}</th>
             </tr>
           </thead>
           <tbody>
@@ -77,13 +79,11 @@ export function LogsPage() {
 
         <div className="pagination">
           <button disabled={page <= 1} onClick={() => setPage(page - 1)}>
-            Zurück
+            {t("common.back")}
           </button>
-          <span>
-            Seite {page} / {totalPages}
-          </span>
+          <span>{t("logs.page", { page, total: totalPages })}</span>
           <button disabled={page >= totalPages} onClick={() => setPage(page + 1)}>
-            Weiter
+            {t("common.next")}
           </button>
         </div>
     </AppShell>

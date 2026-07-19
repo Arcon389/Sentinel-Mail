@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import i18n from "../i18n";
 import { authApi, type UserOut } from "../api/auth";
 
 interface AuthContextValue {
@@ -22,7 +23,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSetupRequired(setup_required);
       if (!setup_required) {
         try {
-          setUser(await authApi.me());
+          const me = await authApi.me();
+          setUser(me);
+          // Apply the user's stored interface language on login/refresh.
+          if (me.locale && me.locale !== i18n.resolvedLanguage) {
+            void i18n.changeLanguage(me.locale);
+          }
         } catch {
           setUser(null);
         }

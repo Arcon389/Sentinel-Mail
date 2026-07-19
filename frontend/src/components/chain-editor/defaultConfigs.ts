@@ -21,20 +21,8 @@ export function defaultConfigFor(stepType: StepType): unknown {
   }
 }
 
-export const STEP_TYPE_LABELS: Record<StepType, string> = {
-  rest_call: "REST-API-Aufruf",
-  webhook: "Webhook",
-  send_email: "E-Mail senden",
-  print: "Drucken",
-  pause: "Pause",
-};
-
-// Technisch identisch (beide senden einen HTTP-Request mit Methode/Headern/Body),
-// die Beschreibung erklärt nur den typischen Einsatzzweck.
-export const STEP_TYPE_DESCRIPTIONS: Record<StepType, string> = {
-  rest_call: "Ruft eine externe API auf, z.B. um einen Datensatz anzulegen oder zu aktualisieren.",
-  webhook: "Meldet das Ereignis an einen Empfänger (z.B. Zapier, Slack, einen eigenen Listener).",
-  send_email: "Versendet eine E-Mail über den konfigurierten SMTP-Server.",
-  print: "Druckt den Mailtext und/oder Anhänge über einen eingerichteten Drucker.",
-  pause: "Wartet die angegebene Anzahl Sekunden, bevor der nächste Schritt ausgeführt wird.",
-};
+// Translation keys for step-type labels/descriptions live in the i18n catalog
+// under `stepTypes.label.<type>` and `stepTypes.description.<type>`. Consumers
+// resolve them via `t()` so they react to the active language.
+export const stepTypeLabelKey = (stepType: StepType): string => `stepTypes.label.${stepType}`;
+export const stepTypeDescriptionKey = (stepType: StepType): string => `stepTypes.description.${stepType}`;

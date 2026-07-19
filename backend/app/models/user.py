@@ -27,5 +27,8 @@ class User(Base):
         nullable=False,
     )
 
+    locale: Mapped[str] = mapped_column(String(5), default="de", server_default="de", nullable=False)
+
     created_at: Mapped[datetime] = mapped_column(server_default=func.now(), nullable=False)
     last_login_at: Mapped[datetime | None] = mapped_column(nullable=True)
+    onboarding_completed_at: Mapped[datetime | None] = mapped_column(nullable=True)

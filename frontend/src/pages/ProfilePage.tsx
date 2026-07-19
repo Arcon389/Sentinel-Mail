@@ -1,10 +1,13 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { authApi } from "../api/auth";
 import { ApiError } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 import { AppShell } from "../components/common/AppShell";
+import { LanguageSwitcher } from "../components/common/LanguageSwitcher";
 
 export function ProfilePage() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -17,37 +20,42 @@ export function ProfilePage() {
     setError(null);
     setMessage(null);
     if (newPassword !== confirmPassword) {
-      setError("Passwörter stimmen nicht überein");
+      setError(t("profile.passwordsMismatch"));
       return;
     }
     try {
       await authApi.changePassword(currentPassword, newPassword);
-      setMessage("Passwort geändert");
+      setMessage(t("profile.changed"));
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Ändern fehlgeschlagen");
+      setError(err instanceof ApiError ? err.message : t("profile.changeFailed"));
     }
   };
 
   return (
-    <AppShell title="Profil">
+    <AppShell title={t("profile.title")}>
       <p>
-          Angemeldet als <strong>{user?.email}</strong> ({user?.role})
+          {t("profile.loggedInAs")} <strong>{user?.email}</strong> ({user?.role})
         </p>
+        <form className="account-form">
+          <h2>{t("profile.language")}</h2>
+          <LanguageSwitcher />
+          <p className="hint">{t("profile.languageHint")}</p>
+        </form>
         <form className="account-form" onSubmit={onSubmit}>
-          <h2>Passwort ändern</h2>
+          <h2>{t("profile.changePassword")}</h2>
           <label>
-            Aktuelles Passwort
+            {t("profile.currentPassword")}
             <input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} required />
           </label>
           <label>
-            Neues Passwort
+            {t("profile.newPassword")}
             <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} minLength={8} required />
           </label>
           <label>
-            Neues Passwort bestätigen
+            {t("profile.confirmNewPassword")}
             <input
               type="password"
               value={confirmPassword}
@@ -58,7 +66,7 @@ export function ProfilePage() {
           </label>
           {error && <p className="error">{error}</p>}
           {message && <p>{message}</p>}
-          <button type="submit">Passwort ändern</button>
+          <button type="submit">{t("profile.changePassword")}</button>
         </form>
     </AppShell>
   );

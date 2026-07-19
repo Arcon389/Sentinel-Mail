@@ -1,11 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ApiError } from "../api/client";
 import { usersApi } from "../api/users";
 import { useAuth } from "../auth/AuthContext";
 import { AppShell } from "../components/common/AppShell";
 
 export function UsersPage() {
+  const { t } = useTranslation();
   const { user: currentUser } = useAuth();
   const queryClient = useQueryClient();
   const { data: users } = useQuery({ queryKey: ["users"], queryFn: usersApi.list });
@@ -24,7 +26,7 @@ export function UsersPage() {
       setRole("user");
       setError(null);
     },
-    onError: (err) => setError(err instanceof ApiError ? err.message : "Anlegen fehlgeschlagen"),
+    onError: (err) => setError(err instanceof ApiError ? err.message : t("users.createFailed")),
   });
 
   const roleMutation = useMutation({
@@ -38,7 +40,7 @@ export function UsersPage() {
   });
 
   return (
-    <AppShell title="Benutzerverwaltung">
+    <AppShell title={t("users.title")}>
       <form
           className="account-form"
           onSubmit={(e) => {
@@ -46,32 +48,32 @@ export function UsersPage() {
             createMutation.mutate({ email, password, role });
           }}
         >
-          <h2>Neuer Benutzer</h2>
+          <h2>{t("users.newUser")}</h2>
           <label>
-            E-Mail
+            {t("users.email")}
             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
           </label>
           <label>
-            Passwort
+            {t("users.password")}
             <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} minLength={8} required />
           </label>
           <label>
-            Rolle
+            {t("users.role")}
             <select value={role} onChange={(e) => setRole(e.target.value as "admin" | "user")}>
-              <option value="user">Benutzer</option>
-              <option value="admin">Admin</option>
+              <option value="user">{t("users.roleUser")}</option>
+              <option value="admin">{t("users.roleAdmin")}</option>
             </select>
           </label>
           {error && <p className="error">{error}</p>}
-          <button type="submit">Anlegen</button>
+          <button type="submit">{t("common.create")}</button>
         </form>
 
-        <h2>Benutzer</h2>
+        <h2>{t("users.usersHeading")}</h2>
         <table>
           <thead>
             <tr>
-              <th>E-Mail</th>
-              <th>Rolle</th>
+              <th>{t("users.email")}</th>
+              <th>{t("users.role")}</th>
               <th></th>
             </tr>
           </thead>
@@ -84,12 +86,12 @@ export function UsersPage() {
                     value={u.role}
                     onChange={(e) => roleMutation.mutate({ id: u.id, role: e.target.value as "admin" | "user" })}
                   >
-                    <option value="user">Benutzer</option>
-                    <option value="admin">Admin</option>
+                    <option value="user">{t("users.roleUser")}</option>
+                    <option value="admin">{t("users.roleAdmin")}</option>
                   </select>
                 </td>
                 <td>
-                  {u.id !== currentUser?.id && <button onClick={() => deleteMutation.mutate(u.id)}>Löschen</button>}
+                  {u.id !== currentUser?.id && <button onClick={() => deleteMutation.mutate(u.id)}>{t("common.delete")}</button>}
                 </td>
               </tr>
             ))}

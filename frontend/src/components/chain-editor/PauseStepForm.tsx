@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { PauseStepConfig } from "../../api/actionChains";
 
 interface Props {
@@ -6,9 +7,10 @@ interface Props {
 }
 
 export function PauseStepForm({ config, onChange }: Props) {
+  const { t } = useTranslation();
   return (
     <label>
-      Wartezeit (Sekunden)
+      {t("pauseForm.waitTime")}
       <input
         type="number"
         min={0}

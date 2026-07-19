@@ -328,6 +328,18 @@ a:focus-visible {
   outline-offset: 1px;
 }
 
+.danger-button {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+}
+
+.danger-button:hover {
+  background: var(--danger);
+  border-color: var(--danger);
+  filter: brightness(1.08);
+}
+
 form button[type="submit"] {
   background: var(--accent);
   border-color: var(--accent);
@@ -352,6 +364,60 @@ form button[type="submit"]:hover {
 
 .btn-block {
   width: 100%;
+}
+
+/* ---------- Modal / confirm dialog ---------- */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: rgba(16, 20, 30, 0.45);
+  animation: modal-overlay-in 0.12s ease;
+}
+
+.modal {
+  width: 100%;
+  max-width: 420px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  padding: 1.5rem;
+  animation: modal-in 0.14s ease;
+}
+
+.modal-title {
+  margin: 0 0 0.5rem;
+}
+
+.modal-message {
+  margin: 0 0 1.25rem;
+  color: var(--text-muted);
+  white-space: pre-line;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+@keyframes modal-overlay-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
 }
 
 /* ---------- Forms ---------- */
@@ -462,6 +528,13 @@ textarea:hover {
   flex-wrap: wrap;
 }
 
+.page-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
 /* ---------- Tables ---------- */
 
 table {
@@ -536,14 +609,21 @@ td button {
 .chain-list ul button {
   width: 100%;
   justify-content: flex-start;
-  background: transparent;
-  border-color: transparent;
+  padding: 0.5rem 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
   font-weight: 500;
+}
+
+.chain-list ul button:hover {
+  background: var(--surface-hover);
+  border-color: var(--accent-soft);
 }
 
 .chain-list ul button.active {
   background: var(--accent-soft);
-  border-color: transparent;
+  border-color: var(--accent-soft);
   color: var(--accent);
   font-weight: 650;
 }
@@ -628,6 +708,24 @@ td button {
   flex: 1;
   font-family: ui-monospace, SFMono-Regular, monospace;
   font-size: 0.82rem;
+}
+
+.rest-step-section {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.5rem 0.7rem;
+}
+
+.rest-step-section > summary {
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text);
+  list-style-position: inside;
+}
+
+.rest-step-section[open] > summary {
+  margin-bottom: 0.6rem;
 }
 
 .keyvalue-editor {
@@ -791,6 +889,104 @@ td button {
   padding-left: 1.1rem;
   font-size: 0.86rem;
   color: var(--text-muted);
+}
+
+/* Segmented control to switch between add modes */
+.mode-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.mode-tabs button {
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.mode-tabs button[aria-selected="true"] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--text);
+  font-weight: 600;
+}
+
+.mode-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding: 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+/* Discovered-printer results: full-width, stacked, no bullets */
+.discovered-list {
+  list-style: none;
+  padding-left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.discovered-list button {
+  width: 100%;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  text-align: left;
+  font-weight: 500;
+}
+
+.discovered-list button.selected {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.discovered-name {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.discovered-uri {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 0.74rem;
+  color: var(--text-muted);
+}
+
+/* ---------- Onboarding wizard ---------- */
+
+.printer-wizard.onboarding {
+  max-width: 520px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.onboarding-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.onboarding-step {
+  font-size: 0.72rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--text-muted);
+}
+
+.onboarding-step.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.onboarding-step.done {
+  color: var(--accent);
 }
 
 /* ---------- Logs ---------- */

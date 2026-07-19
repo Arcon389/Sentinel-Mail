@@ -8,6 +8,7 @@ actual network printers configured in it.
 import datetime
 import os
 import tempfile
+from urllib.parse import urlparse
 
 import cups
 
@@ -24,6 +25,46 @@ def _connection() -> "cups.Connection":
         return cups.Connection(host=settings.cups_server_host, port=settings.cups_server_port)
     except RuntimeError as exc:
         raise CupsError(f"Could not connect to CUPS server: {exc}") from exc
+
+
+def list_devices() -> list[dict]:
+    """Asks the CUPS server to enumerate available network printers.
+
+    Runs CUPS' own device backends (`dnssd` for mDNS, `snmp` for an active
+    network scan) *inside the cups container's* network namespace, so - unlike
+    a scan from the web container on the Docker bridge - it can actually see the
+    LAN when the cups service uses `network_mode: host`.
+    """
+    conn = _connection()
+    try:
+        devices = conn.getDevices()
+    except cups.IPPError as exc:
+        raise CupsError(str(exc)) from exc
+
+    result: list[dict] = []
+    for uri, info in devices.items():
+        # Only network-reachable devices - skip local usb/parallel/file backends.
+        if info.get("device-class") != "network":
+            continue
+        parsed = urlparse(uri)
+        # getDevices() also lists the backends themselves (device-uri is just the
+        # bare scheme, e.g. "ipp"/"socket"/"beh", with no host) - those aren't
+        # real printers, so keep only entries that resolve to an actual host.
+        if not parsed.hostname:
+            continue
+        make_and_model = info.get("device-make-and-model") or None
+        name = info.get("device-info") or make_and_model or parsed.hostname or uri
+        result.append(
+            {
+                "name": name,
+                "host": parsed.hostname or "",
+                "port": parsed.port or 631,
+                "uri": uri,
+                "make_and_model": make_and_model,
+                "device_class": info.get("device-class"),
+            }
+        )
+    return result
 
 
 def add_printer(queue_name: str, device_uri: str, ppd_name: str | None = None) -> None:

@@ -48,14 +48,19 @@ services:
       context: ./cups
     image: sentinel-mail-cups
     restart: unless-stopped
-    ports:
-      - "631:631"
+    # Printer discovery (mDNS + SNMP) runs inside THIS container via CUPS, and
+    # printing relays through it too. On the Docker bridge network, mDNS
+    # multicast and SNMP broadcasts stay inside the container's subnet and never
+    # reach the LAN, so network printers (e.g. on 192.168.x.x) aren't found.
+    # `network_mode: host` gives CUPS direct access to the host's LAN so both
+    # discovery and printing work. Note: on Docker Desktop (Windows/macOS) the
+    # "host" is the Linux VM, not the physical LAN - there, add printers by URI
+    # manually (e.g. ipp://<ip>/ipp/print).
+    network_mode: host
     volumes:
       - cups_config:/etc/cups
-    # If your network printers aren't reachable from the Docker bridge network
-    # (common on Wi-Fi/mDNS-heavy home networks), uncomment the line below
-    # instead of `ports:` above - gives CUPS direct access to the host's LAN:
-    # network_mode: host
+    # With network_mode: host, port 631 is already published on the host; a
+    # `ports:` mapping would conflict, so it is intentionally omitted.
 
   frontend:
     build:

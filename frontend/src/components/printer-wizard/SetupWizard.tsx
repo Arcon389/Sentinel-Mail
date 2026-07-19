@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { printersApi } from "../../api/printers";
+import { useTranslation } from "react-i18next";
+import { printersApi, buildDeviceUri, type DiscoveredPrinter, type PrinterProtocol } from "../../api/printers";
 import { ApiError } from "../../api/client";
 
 interface Props {
@@ -8,13 +9,19 @@ interface Props {
 }
 
 type WizardStep = "connect" | "capabilities" | "defaults" | "done";
+type ConnectMode = "search" | "byIp" | "advanced";
 
 export function SetupWizard({ onCreated, onCancel }: Props) {
+  const { t } = useTranslation();
   const [step, setStep] = useState<WizardStep>("connect");
+  const [mode, setMode] = useState<ConnectMode>("search");
   const [name, setName] = useState("");
   const [connectionUri, setConnectionUri] = useState("");
+  const [ipHost, setIpHost] = useState("");
+  const [ipPort, setIpPort] = useState("");
+  const [protocol, setProtocol] = useState<PrinterProtocol>("ipp");
   const [discovering, setDiscovering] = useState(false);
-  const [discovered, setDiscovered] = useState<{ name: string; uri: string }[]>([]);
+  const [discovered, setDiscovered] = useState<DiscoveredPrinter[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [createdPrinter, setCreatedPrinter] = useState<Awaited<ReturnType<typeof printersApi.create>> | null>(null);
@@ -28,22 +35,26 @@ export function SetupWizard({ onCreated, onCancel }: Props) {
       const found = await printersApi.discover();
       setDiscovered(found);
       if (found.length === 0) {
-        setError("Keine Drucker per mDNS/Bonjour gefunden. Bitte IP-Adresse/Hostname manuell eingeben.");
+        setError(t("printerWizard.noPrintersFound"));
       }
     } catch {
-      setError("Discovery fehlgeschlagen. Bitte IP-Adresse/Hostname manuell eingeben.");
+      setError(t("printerWizard.discoveryFailed"));
     } finally {
       setDiscovering(false);
     }
   };
 
+  const resolvedUri = () =>
+    mode === "byIp" ? buildDeviceUri(protocol, ipHost, ipPort ? Number(ipPort) : undefined) : connectionUri;
+
   const connect = async () => {
     setError(null);
     setCreating(true);
+    const uri = resolvedUri();
     try {
       const printer = await printersApi.create({
-        name: name || connectionUri,
-        connection_uri: connectionUri,
+        name: name || ipHost || uri,
+        connection_uri: uri,
         is_active: true,
         default_options: options,
       });
@@ -51,7 +62,7 @@ export function SetupWizard({ onCreated, onCancel }: Props) {
       setOptions(printer.default_options);
       setStep("capabilities");
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Verbindung fehlgeschlagen");
+      setError(err instanceof ApiError ? err.message : t("printerWizard.connectionFailed"));
     } finally {
       setCreating(false);
     }
@@ -65,57 +76,117 @@ export function SetupWizard({ onCreated, onCancel }: Props) {
 
   const testPrint = async () => {
     if (!createdPrinter) return;
-    setTestResult("Drucke Testseite...");
+    setTestResult(t("printerWizard.printingTestPage"));
     try {
       const result = await printersApi.testPrint(createdPrinter.id);
       setTestResult(result.success ? `✓ ${result.message}` : `✗ ${result.message}`);
     } catch {
-      setTestResult("✗ Testdruck fehlgeschlagen");
+      setTestResult(`✗ ${t("printerWizard.testPrintFailed")}`);
     }
   };
 
   return (
     <div className="printer-wizard">
-      <h2>Drucker einrichten</h2>
+      <h2>{t("printerWizard.title")}</h2>
 
       {step === "connect" && (
         <div className="wizard-step">
-          <h3>1. Verbindung herstellen</h3>
-          <button type="button" onClick={runDiscovery} disabled={discovering}>
-            {discovering ? "Suche..." : "Netzwerk nach Druckern durchsuchen"}
-          </button>
-          {discovered.length > 0 && (
-            <ul>
-              {discovered.map((d) => (
-                <li key={d.uri}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setName(d.name);
-                      setConnectionUri(d.uri);
-                    }}
-                  >
-                    {d.name} ({d.uri})
-                  </button>
-                </li>
-              ))}
-            </ul>
+          <h3>{t("printerWizard.step1")}</h3>
+
+          <div className="mode-tabs" role="tablist">
+            <button type="button" role="tab" aria-selected={mode === "search"} onClick={() => setMode("search")}>
+              {t("printerWizard.modeSearch")}
+            </button>
+            <button type="button" role="tab" aria-selected={mode === "byIp"} onClick={() => setMode("byIp")}>
+              {t("printerWizard.modeByIp")}
+            </button>
+            <button type="button" role="tab" aria-selected={mode === "advanced"} onClick={() => setMode("advanced")}>
+              {t("printerWizard.modeAdvanced")}
+            </button>
+          </div>
+
+          {mode === "search" && (
+            <div className="mode-panel">
+              <button type="button" onClick={runDiscovery} disabled={discovering}>
+                {discovering
+                  ? t("printerWizard.searching")
+                  : discovered.length > 0
+                    ? t("printerWizard.searchAgain")
+                    : t("printerWizard.searchNetwork")}
+              </button>
+              {discovered.length > 0 && (
+                <ul className="discovered-list">
+                  {discovered.map((d) => (
+                    <li key={d.uri}>
+                      <button
+                        type="button"
+                        className={connectionUri === d.uri ? "selected" : undefined}
+                        onClick={() => {
+                          setName(d.name);
+                          setConnectionUri(d.uri);
+                        }}
+                      >
+                        <span className="discovered-name">
+                          {d.name}
+                          {d.make_and_model ? ` — ${d.make_and_model}` : ""}
+                        </span>
+                        <span className="discovered-uri">{d.uri}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           )}
+
+          {mode === "byIp" && (
+            <div className="mode-panel">
+              <label>
+                {t("printerWizard.protocol")}
+                <select value={protocol} onChange={(e) => setProtocol(e.target.value as PrinterProtocol)}>
+                  <option value="ipp">{t("printerWizard.protocolIpp")}</option>
+                  <option value="socket">{t("printerWizard.protocolSocket")}</option>
+                  <option value="lpd">{t("printerWizard.protocolLpd")}</option>
+                </select>
+              </label>
+              <label>
+                {t("printerWizard.ipAddress")}
+                <input value={ipHost} onChange={(e) => setIpHost(e.target.value)} placeholder="192.168.1.50" />
+              </label>
+              <label>
+                {t("printerWizard.port")}
+                <input
+                  type="number"
+                  min={1}
+                  value={ipPort}
+                  onChange={(e) => setIpPort(e.target.value)}
+                  placeholder={String({ ipp: 631, socket: 9100, lpd: 515 }[protocol])}
+                />
+              </label>
+              {ipHost.trim() && <p className="hint">{resolvedUri()}</p>}
+            </div>
+          )}
+
+          {mode === "advanced" && (
+            <div className="mode-panel">
+              <label>
+                {t("printerWizard.ippUri")}
+                <input value={connectionUri} onChange={(e) => setConnectionUri(e.target.value)} required />
+              </label>
+            </div>
+          )}
+
           <label>
-            Name
+            {t("printerWizard.name")}
             <input value={name} onChange={(e) => setName(e.target.value)} required />
-          </label>
-          <label>
-            IPP-URI (z.B. ipp://192.168.1.50:631/ipp/print)
-            <input value={connectionUri} onChange={(e) => setConnectionUri(e.target.value)} required />
           </label>
           {error && <p className="error">{error}</p>}
           <div className="button-row">
-            <button type="button" onClick={connect} disabled={creating || !connectionUri}>
-              {creating ? "Verbinde..." : "Verbinden"}
+            <button type="button" onClick={connect} disabled={creating || !resolvedUri()}>
+              {creating ? t("printerWizard.connecting") : t("printerWizard.connect")}
             </button>
             <button type="button" onClick={onCancel}>
-              Abbrechen
+              {t("common.cancel")}
             </button>
           </div>
         </div>
@@ -123,23 +194,23 @@ export function SetupWizard({ onCreated, onCancel }: Props) {
 
       {step === "capabilities" && createdPrinter && (
         <div className="wizard-step">
-          <h3>2. Fähigkeiten</h3>
+          <h3>{t("printerWizard.step2")}</h3>
           <ul>
-            <li>Duplex: {createdPrinter.capabilities.duplex_supported ? "unterstützt" : "nicht unterstützt"}</li>
-            <li>Farbe: {createdPrinter.capabilities.color_supported ? "unterstützt" : "nicht unterstützt"}</li>
-            <li>Papierformate: {createdPrinter.capabilities.paper_sizes.join(", ") || "unbekannt"}</li>
+            <li>{t("printerWizard.capDuplex", { state: createdPrinter.capabilities.duplex_supported ? t("printerWizard.supported") : t("printerWizard.notSupported") })}</li>
+            <li>{t("printerWizard.capColor", { state: createdPrinter.capabilities.color_supported ? t("printerWizard.supported") : t("printerWizard.notSupported") })}</li>
+            <li>{t("printerWizard.capPaper", { sizes: createdPrinter.capabilities.paper_sizes.join(", ") || t("printerWizard.paperUnknown") })}</li>
           </ul>
           <button type="button" onClick={() => setStep("defaults")}>
-            Weiter
+            {t("common.next")}
           </button>
         </div>
       )}
 
       {step === "defaults" && createdPrinter && (
         <div className="wizard-step">
-          <h3>3. Standardoptionen</h3>
+          <h3>{t("printerWizard.step3")}</h3>
           <label>
-            Kopien
+            {t("printerWizard.copies")}
             <input
               type="number"
               min={1}
@@ -150,17 +221,17 @@ export function SetupWizard({ onCreated, onCancel }: Props) {
           {createdPrinter.capabilities.duplex_supported && (
             <label>
               <input type="checkbox" checked={options.duplex} onChange={(e) => setOptions({ ...options, duplex: e.target.checked })} />
-              Duplex (beidseitig)
+              {t("printerWizard.duplexBoth")}
             </label>
           )}
           {createdPrinter.capabilities.color_supported && (
             <label>
               <input type="checkbox" checked={options.color} onChange={(e) => setOptions({ ...options, color: e.target.checked })} />
-              Farbe
+              {t("printerWizard.color")}
             </label>
           )}
           <label>
-            Papierformat
+            {t("printerWizard.paperFormat")}
             <select value={options.paper_size} onChange={(e) => setOptions({ ...options, paper_size: e.target.value })}>
               {(createdPrinter.capabilities.paper_sizes.length ? createdPrinter.capabilities.paper_sizes : ["A4"]).map((size) => (
                 <option key={size} value={size}>
@@ -170,20 +241,20 @@ export function SetupWizard({ onCreated, onCancel }: Props) {
             </select>
           </label>
           <button type="button" onClick={saveDefaults}>
-            Speichern &amp; weiter
+            {t("printerWizard.saveAndNext")}
           </button>
         </div>
       )}
 
       {step === "done" && createdPrinter && (
         <div className="wizard-step">
-          <h3>4. Testseite drucken</h3>
+          <h3>{t("printerWizard.step4")}</h3>
           <button type="button" onClick={testPrint}>
-            Testseite drucken
+            {t("printerWizard.printTestPage")}
           </button>
           {testResult && <p>{testResult}</p>}
           <button type="button" onClick={onCreated}>
-            Fertig
+            {t("printerWizard.finish")}
           </button>
         </div>
       )}

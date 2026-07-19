@@ -1,13 +1,21 @@
-"""mDNS/Bonjour discovery of network printers advertising IPP (_ipp._tcp.local.).
+"""Network printer discovery.
 
-Falls back to manual host/IP entry in the UI when nothing is found - not all
-networks/printers support mDNS, and Docker's network namespace may not see
-multicast traffic from the host network depending on the deployment.
+Primary source is the CUPS server itself (`list_devices()` -> pycups
+`getDevices()`), which runs CUPS' `dnssd` (mDNS) and `snmp` backends inside the
+cups container. That sidesteps the Docker bridge network: the web/worker
+containers never need to see the LAN, only the cups container does (which it
+must anyway to print - see `network_mode: host` in docker-compose.yml).
+
+A local `zeroconf`/mDNS browse is kept as a secondary fallback for deployments
+where the web container *does* share the host network. When neither finds
+anything, the UI offers manual host/IP entry.
 """
 
 import time
 
 from zeroconf import ServiceBrowser, ServiceListener, Zeroconf
+
+from app.services.printing.cups_client import CupsError, list_devices
 
 SERVICE_TYPE = "_ipp._tcp.local."
 
@@ -31,6 +39,8 @@ class _CollectingListener(ServiceListener):
                 "host": host,
                 "port": port,
                 "uri": f"ipp://{host}:{port}/ipp/print",
+                "make_and_model": None,
+                "device_class": "network",
             }
         )
 
@@ -41,7 +51,7 @@ class _CollectingListener(ServiceListener):
         pass
 
 
-def discover_printers(timeout_seconds: float = 5.0) -> list[dict]:
+def _discover_via_zeroconf(timeout_seconds: float) -> list[dict]:
     zc = Zeroconf()
     listener = _CollectingListener()
     browser = ServiceBrowser(zc, SERVICE_TYPE, listener)
@@ -51,3 +61,28 @@ def discover_printers(timeout_seconds: float = 5.0) -> list[dict]:
         browser.cancel()
         zc.close()
     return listener.found
+
+
+def discover_printers(timeout_seconds: float = 5.0) -> list[dict]:
+    found: list[dict] = []
+    try:
+        found = list_devices()
+    except CupsError:
+        found = []
+
+    if not found:
+        try:
+            found = _discover_via_zeroconf(timeout_seconds)
+        except Exception:
+            found = []
+
+    # Deduplicate by device URI, keeping first occurrence.
+    seen: set[str] = set()
+    unique: list[dict] = []
+    for entry in found:
+        uri = entry.get("uri", "")
+        if uri in seen:
+            continue
+        seen.add(uri)
+        unique.append(entry)
+    return unique

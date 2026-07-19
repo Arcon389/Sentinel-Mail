@@ -7,6 +7,81 @@ Format angelehnt an [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ### Hinzugefügt
 
+- **Drucker nachträglich bearbeiten**: Auf der Drucker-Seite (`/printers`) gibt es pro Drucker
+  jetzt einen „Bearbeiten"-Button, über den sich Name, Standardoptionen (Kopien, Duplex, Farbe,
+  Papierformat) und die Verbindungs-URI ändern lassen
+  (`frontend/src/components/printer-wizard/PrinterEditForm.tsx`). Wird die Verbindungs-URI
+  geändert, wird die CUPS-Queue entsprechend angepasst und die Fähigkeiten neu abgefragt
+  (`PATCH /api/printers/{id}` in `backend/app/api/printers.py`, `PrinterUpdate` um
+  `connection_uri` erweitert).
+
+### Geändert
+
+- **Webhook-/REST-Editor aufgeräumt**: Da Header und Body optional sind, sind ihre Rubriken im
+  Schritt-Editor (`frontend/src/components/rest-wizard/RestStepForm.tsx`) jetzt standardmäßig
+  eingeklappt (native `<details>`/`<summary>`, Summary mit „(optional)"-Hinweis) und werden nur
+  bei Bedarf ausgeklappt. Die Grundfelder Methode und URL bleiben direkt sichtbar.
+- **Schutz vor versehentlichem Löschen**: Die Lösch-Buttons auf der Ketten-Seite
+  (`/chains`, „Kette löschen") und der Konten-Seite (`/accounts`, „Löschen") sind jetzt rot
+  (danger) dargestellt und fragen vor dem Löschen nach. Die Rückfrage läuft über einen
+  in die App integrierten Bestätigungsdialog (`ConfirmProvider`/`useConfirm` in
+  `frontend/src/components/common/ConfirmDialog.tsx`) statt über das native
+  Browser-`window.confirm`; er ist wiederverwendbar (promise-basiert) und per Escape/Enter
+  bedienbar.
+
+### Behoben
+
+- **Netzwerkdrucker werden nicht erkannt**: Der `cups`-Container lief am Docker-Bridge-Netz
+  (`ports: "631:631"`), wodurch mDNS-Multicast und SNMP-Broadcasts im Container-Subnetz
+  hängenblieben und Drucker im LAN (z.B. `192.168.103.6`) nicht gefunden wurden. Der Service
+  nutzt jetzt `network_mode: host` (in `docker-compose.yml`), sodass CUPS-Discovery und
+  Druck direkten Zugriff auf das Host-LAN haben. Hinweis: Unter Docker Desktop
+  (Windows/macOS) ist der „Host" die Linux-VM — dort Drucker weiterhin per URI manuell anlegen.
+- **Webhook-/REST-Steps ohne Body**: Ein `webhook`-/`rest_call`-Step schlug mit „Format string
+  contains positional fields" fehl, sobald nur eine URL (ohne Body) konfiguriert war — der
+  leere Default-Body `{}` wurde durch `str.format_map` geschickt und scheiterte an den
+  positionalen Klammern. Dasselbe traf jeden echten JSON-Body mit literalen geschweiften
+  Klammern (z.B. `{"foo": "bar"}`). Die Platzhalter-Ersetzung (`render_template` in
+  `backend/app/services/template_engine.py`) ersetzt jetzt nur noch bekannte
+  `{platzhalter}`-Tokens und lässt alle übrigen Klammern literal stehen. Header und Body sind
+  damit wie vorgesehen optional.
+
+### Hinzugefügt
+
+- **Drucker einfacher hinzufügen**: Der Einrichtungs-Assistent bietet jetzt drei Wege im ersten
+  Schritt — „Netzwerk durchsuchen", „Per IP hinzufügen" und „Erweitert (URI)". Bei der IP-Eingabe
+  tippt man nur IP/Hostname (+ optional Port) und wählt das **Protokoll** (IPP, Raw/Socket 9100
+  bzw. JetDirect, LPD 515); die passende Geräte-URI wird automatisch gebaut
+  (`buildDeviceUri` in `frontend/src/api/printers.ts`). Damit lassen sich auch Drucker anbinden,
+  die kein IPP sprechen. Die vollständige URI-Eingabe bleibt als „Erweitert" erhalten.
+- **Zuverlässigere Drucker-Suche über CUPS**: Die Netzwerk-Discovery läuft jetzt primär über den
+  CUPS-Server (`pycups getDevices()` → CUPS-Backends `dnssd`/mDNS und `snmp`) statt über eine
+  `zeroconf`-Suche im `web`-Container. Sie wird damit im Netzwerk-Namespace des `cups`-Containers
+  ausgeführt und findet Drucker auch dann, wenn der `web`-Container das LAN im Docker-Bridge-Netz
+  nicht sieht. Die bisherige mDNS-Suche bleibt als Fallback erhalten. Endpunkt
+  `GET /api/printers/discover` liefert zusätzlich `make_and_model`/`device_class`.
+
+### Dokumentation
+
+- Hinweis in `docker-compose.yml`/Setup ergänzt, dass `network_mode: host` für den `cups`-Dienst
+  jetzt auch für die **Drucker-Discovery** (nicht nur den Druck) empfohlen ist, wenn Drucker aus
+  dem Docker-Bridge-Netz nicht erreichbar sind.
+- **README/`docs/setup.md`**: Neuer Abschnitt „Drucker im Netzwerk finden (Discovery &
+  Einschränkungen)" — erklärt, dass mDNS/SNMP im `cups`-Container laufen, warum `network_mode: host`
+  jetzt Standard ist, und dokumentiert die Grenzen (Docker Desktop bindet an die Linux-VM statt ans
+  physische LAN; VLAN-/WLAN-Client-Isolation blockt Multicast; Nur-mDNS-Drucker) samt Fallback
+  „Per IP hinzufügen".
+
+- **Mehrsprachigkeit (i18n)**: Die Oberfläche ist jetzt mehrsprachig und wird zusätzlich zu
+  Deutsch in **Englisch** ausgeliefert. Basierend auf `react-i18next` mit JSON-Katalogen pro
+  Sprache (`frontend/src/i18n/locales/<code>/translation.json`) und einer zentralen
+  Sprach-Registry (`frontend/src/i18n/languages.ts`) — eine weitere Sprache hinzuzufügen
+  bedeutet: einen Eintrag in der Registry ergänzen und eine neue JSON-Datei anlegen. Die
+  Sprachwahl ist über einen Umschalter in `Profil` sowie kompakt auf den Login-/Setup-Seiten
+  möglich; sie wird **pro Nutzer in der DB** gespeichert (neue Spalte `users.locale`, Migration
+  `0006`, Endpunkt `PATCH /api/auth/me/locale`) und beim Login angewendet, mit `localStorage`
+  als Fallback für die Vor-Login-Seiten und automatischer Browser-Spracherkennung. Hinweis:
+  Serverseitige Meldungen (z.B. Verbindungstest-Ergebnisse) bleiben vorerst unübersetzt.
 - **Onboarding-Assistent nach dem ersten Login**: Nach der ersten Anmeldung wird ein Admin
   einmalig durch einen mehrstufigen Assistenten (`/onboarding`) geführt — IMAP-Konto anlegen
   (inkl. „Verbindung testen"), SMTP-Prüfung (Status + optionale Testmail), optional Drucker
@@ -39,8 +114,19 @@ Format angelehnt an [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
   oder Bedingungen übersprungene Ketten werden im Log als `chain_skipped` vermerkt.
   Migration `0004` fügt die Spalten auf `action_chains` hinzu.
 
+### Dokumentation
+
+- `README.md` um die mehrsprachige Oberfläche und einen Abschnitt „Sprache hinzufügen (i18n)"
+  ergänzt. Neue `CLAUDE.md` mit projektspezifischen Hinweisen (Architektur-/Migrationsmuster,
+  Docker-basierter Frontend-Build und Backend-Integrationstests inkl. der `COOKIE_SECURE=false`-
+  Eigenheit des TestClients, i18n-Workflow).
+
 ### Behoben
 
+- Bereits angelegte Ketten im Aktionsketten-Editor werden jetzt als klar abgegrenzte,
+  anklickbare Einträge (Karten-Optik mit Rahmen und Hover) dargestellt. Zuvor wirkten
+  sie durch die transparente Fläche wie bloßer Text und waren kaum von der Überschrift
+  „Ketten" zu unterscheiden.
 - Verbindungstest für ein **neues** Konto ohne Passwort lieferte einen rohen
   `422`-Fehler; der Test-Button prüft jetzt vorab und zeigt einen klaren Hinweis
   („Bitte zuerst ein Passwort eingeben"). Zusätzlich werden FastAPI-Validierungs-

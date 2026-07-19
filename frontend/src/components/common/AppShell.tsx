@@ -1,25 +1,27 @@
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { authApi } from "../../api/auth";
 import { useAuth } from "../../auth/AuthContext";
 
 interface NavItem {
   to: string;
-  label: string;
+  labelKey: string;
   icon: ReactNode;
   adminOnly?: boolean;
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { to: "/", label: "Dashboard", icon: <IconDashboard /> },
-  { to: "/accounts", label: "IMAP-Konten", icon: <IconMail /> },
-  { to: "/chains", label: "Aktionsketten", icon: <IconChain /> },
-  { to: "/printers", label: "Drucker", icon: <IconPrinter /> },
-  { to: "/logs", label: "Logs", icon: <IconLogs /> },
-  { to: "/users", label: "Benutzer", icon: <IconUsers />, adminOnly: true },
+  { to: "/", labelKey: "nav.dashboard", icon: <IconDashboard /> },
+  { to: "/accounts", labelKey: "nav.accounts", icon: <IconMail /> },
+  { to: "/chains", labelKey: "nav.chains", icon: <IconChain /> },
+  { to: "/printers", labelKey: "nav.printers", icon: <IconPrinter /> },
+  { to: "/logs", labelKey: "nav.logs", icon: <IconLogs /> },
+  { to: "/users", labelKey: "nav.users", icon: <IconUsers />, adminOnly: true },
 ];
 
 export function AppShell({ title, actions, children }: { title: string; actions?: ReactNode; children: ReactNode }) {
+  const { t } = useTranslation();
   const { user, refresh } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -45,7 +47,7 @@ export function AppShell({ title, actions, children }: { title: string; actions?
               className={"sidebar-link" + (location.pathname === item.to ? " active" : "")}
             >
               {item.icon}
-              <span>{item.label}</span>
+              <span>{t(item.labelKey)}</span>
             </Link>
           ))}
         </nav>
@@ -59,7 +61,7 @@ export function AppShell({ title, actions, children }: { title: string; actions?
           </Link>
           <button className="btn btn-ghost btn-block" onClick={onLogout}>
             <IconLogout />
-            Abmelden
+            {t("nav.logout")}
           </button>
         </div>
       </aside>

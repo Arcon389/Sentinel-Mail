@@ -77,6 +77,16 @@ def get_printer(printer_id: uuid.UUID, db: Session = Depends(get_db)) -> Printer
 @router.patch("/{printer_id}", response_model=PrinterOut)
 def update_printer(printer_id: uuid.UUID, payload: PrinterUpdate, db: Session = Depends(get_db)) -> Printer:
     printer = _get_printer_or_404(db, printer_id)
+    if payload.connection_uri is not None and payload.connection_uri != printer.connection_uri:
+        # Changing the device URI must be mirrored onto the CUPS queue (add_printer
+        # on an existing queue modifies it) and the capabilities re-read. Done before
+        # the commit so a CUPS failure leaves the DB untouched.
+        try:
+            add_printer(printer.cups_queue_name, payload.connection_uri)
+            printer.capabilities = get_capabilities(printer.cups_queue_name)
+        except CupsError as exc:
+            raise HTTPException(status.HTTP_502_BAD_GATEWAY, f"CUPS setup failed: {exc}") from exc
+        printer.connection_uri = payload.connection_uri
     if payload.name is not None:
         printer.name = payload.name
     if payload.is_active is not None:

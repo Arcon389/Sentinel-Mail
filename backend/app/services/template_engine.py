@@ -6,6 +6,7 @@ same request.
 """
 
 import json
+import re
 from urllib.parse import urlencode
 
 PLACEHOLDERS: list[dict[str, str]] = [
@@ -15,14 +16,15 @@ PLACEHOLDERS: list[dict[str, str]] = [
     {"key": "sender", "description": "Absender der neuesten (un)gelesenen Mail"},
 ]
 
-
-class _SafeDict(dict):
-    def __missing__(self, key: str) -> str:
-        return ""
+# Matches only `{name}` placeholder tokens. Any other braces - empty `{}`,
+# positional `{0}`, or the structural braces of a raw JSON body - are left
+# untouched, so a JSON body like `{"count": {unread_count}}` renders correctly
+# and an empty body (default "{}") does not raise. Unknown names render empty.
+_PLACEHOLDER_RE = re.compile(r"\{(\w+)\}")
 
 
 def render_template(template: str, context: dict) -> str:
-    return template.format_map(_SafeDict(**context))
+    return _PLACEHOLDER_RE.sub(lambda m: str(context.get(m.group(1), "")), template)
 
 
 def build_headers(headers: list[dict], context: dict) -> dict[str, str]:

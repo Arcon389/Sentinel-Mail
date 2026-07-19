@@ -1,5 +1,6 @@
+import { useTranslation } from "react-i18next";
 import type { StepType } from "../../api/actionChains";
-import { STEP_TYPE_DESCRIPTIONS, STEP_TYPE_LABELS } from "./defaultConfigs";
+import { stepTypeDescriptionKey, stepTypeLabelKey } from "./defaultConfigs";
 
 interface Props {
   onAdd: (stepType: StepType) => void;
@@ -8,11 +9,12 @@ interface Props {
 const STEP_TYPES: StepType[] = ["rest_call", "webhook", "send_email", "print", "pause"];
 
 export function StepTypeSelector({ onAdd }: Props) {
+  const { t } = useTranslation();
   return (
     <div className="step-type-selector">
       {STEP_TYPES.map((stepType) => (
-        <button key={stepType} type="button" title={STEP_TYPE_DESCRIPTIONS[stepType]} onClick={() => onAdd(stepType)}>
-          + {STEP_TYPE_LABELS[stepType]}
+        <button key={stepType} type="button" title={t(stepTypeDescriptionKey(stepType))} onClick={() => onAdd(stepType)}>
+          + {t(stepTypeLabelKey(stepType))}
         </button>
       ))}
     </div>

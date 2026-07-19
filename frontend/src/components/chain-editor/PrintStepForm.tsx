@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import type { PrintStepConfig } from "../../api/actionChains";
 import { printersApi } from "../../api/printers";
 
@@ -8,15 +9,16 @@ interface Props {
 }
 
 export function PrintStepForm({ config, onChange }: Props) {
+  const { t } = useTranslation();
   const { data: printers } = useQuery({ queryKey: ["printers"], queryFn: printersApi.list });
   const selectedPrinter = printers?.find((p) => p.id === config.printer_id);
 
   return (
     <div className="print-step-form">
       <label>
-        Drucker
+        {t("printForm.printer")}
         <select value={config.printer_id} onChange={(e) => onChange({ ...config, printer_id: e.target.value })}>
-          <option value="">– auswählen –</option>
+          <option value="">{t("common.select")}</option>
           {printers?.filter((p) => p.is_active).map((p) => (
             <option key={p.id} value={p.id}>
               {p.name}
@@ -25,22 +27,22 @@ export function PrintStepForm({ config, onChange }: Props) {
         </select>
       </label>
       {!printers?.length && (
-        <p className="hint">Keine Drucker eingerichtet. Bitte zuerst unter "Druckerverwaltung" einen Drucker anlegen.</p>
+        <p className="hint">{t("printForm.noPrinters")}</p>
       )}
       <label>
-        Was drucken
+        {t("printForm.whatToPrint")}
         <select
           value={config.content}
           onChange={(e) => onChange({ ...config, content: e.target.value as PrintStepConfig["content"] })}
         >
-          <option value="body">Mailtext</option>
-          <option value="attachments">Anhänge</option>
-          <option value="both">Beides</option>
+          <option value="body">{t("printForm.contentBody")}</option>
+          <option value="attachments">{t("printForm.contentAttachments")}</option>
+          <option value="both">{t("printForm.contentBoth")}</option>
         </select>
       </label>
       {(config.content === "attachments" || config.content === "both") && (
         <label>
-          Anhang-Filter (Dateiendungen, kommagetrennt, leer = alle)
+          {t("printForm.attachmentFilter")}
           <input
             value={config.attachment_filter.join(", ")}
             onChange={(e) =>
@@ -57,9 +59,9 @@ export function PrintStepForm({ config, onChange }: Props) {
         </label>
       )}
       <fieldset>
-        <legend>Druckoptionen (Override der Drucker-Standards)</legend>
+        <legend>{t("printForm.printOptions")}</legend>
         <label>
-          Kopien
+          {t("printForm.copies")}
           <input
             type="number"
             min={1}
@@ -74,7 +76,7 @@ export function PrintStepForm({ config, onChange }: Props) {
               checked={(config.options_override.duplex as boolean) ?? selectedPrinter.default_options.duplex}
               onChange={(e) => onChange({ ...config, options_override: { ...config.options_override, duplex: e.target.checked } })}
             />
-            Duplex
+            {t("printForm.duplex")}
           </label>
         )}
         {selectedPrinter?.capabilities.color_supported && (
@@ -84,7 +86,7 @@ export function PrintStepForm({ config, onChange }: Props) {
               checked={(config.options_override.color as boolean) ?? selectedPrinter.default_options.color}
               onChange={(e) => onChange({ ...config, options_override: { ...config.options_override, color: e.target.checked } })}
             />
-            Farbe
+            {t("printForm.color")}
           </label>
         )}
       </fieldset>

@@ -1,9 +1,10 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { ChainStep, HttpStepConfig, OnError, PauseStepConfig, PrintStepConfig, SendEmailStepConfig } from "../../api/actionChains";
 import { RestStepForm } from "../rest-wizard/RestStepForm";
-import { STEP_TYPE_DESCRIPTIONS, STEP_TYPE_LABELS } from "./defaultConfigs";
+import { stepTypeDescriptionKey, stepTypeLabelKey } from "./defaultConfigs";
 import { PauseStepForm } from "./PauseStepForm";
 import { PrintStepForm } from "./PrintStepForm";
 import { SendEmailStepForm } from "./SendEmailStepForm";
@@ -17,6 +18,7 @@ interface Props {
 }
 
 export function StepCard({ step, accountId, onChange, onErrorChange, onDelete }: Props) {
+  const { t } = useTranslation();
   const [collapsed, setCollapsed] = useState(false);
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: step.id });
 
@@ -29,23 +31,23 @@ export function StepCard({ step, accountId, onChange, onErrorChange, onDelete }:
           ⠿
         </span>
         <strong>
-          {step.position + 1}. {STEP_TYPE_LABELS[step.step_type]}
+          {step.position + 1}. {t(stepTypeLabelKey(step.step_type))}
         </strong>
         <button type="button" onClick={() => setCollapsed(!collapsed)}>
-          {collapsed ? "Aufklappen" : "Zuklappen"}
+          {collapsed ? t("stepCard.expand") : t("stepCard.collapse")}
         </button>
         <select value={step.on_error} onChange={(e) => onErrorChange(e.target.value as OnError)}>
-          <option value="abort_chain">Bei Fehler: Kette abbrechen</option>
-          <option value="continue">Bei Fehler: fortfahren</option>
+          <option value="abort_chain">{t("stepCard.onErrorAbort")}</option>
+          <option value="continue">{t("stepCard.onErrorContinue")}</option>
         </select>
         <button type="button" onClick={onDelete}>
-          Löschen
+          {t("common.delete")}
         </button>
       </div>
 
       {!collapsed && (
         <div className="step-card-body">
-          <p className="hint step-description">{STEP_TYPE_DESCRIPTIONS[step.step_type]}</p>
+          <p className="hint step-description">{t(stepTypeDescriptionKey(step.step_type))}</p>
           {(step.step_type === "rest_call" || step.step_type === "webhook") && (
             <RestStepForm
               stepType={step.step_type}

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { KeyValue } from "../../api/actionChains";
 
 interface Props {
@@ -8,7 +9,10 @@ interface Props {
   onValueFocus?: (index: number) => void;
 }
 
-export function KeyValueEditor({ rows, onChange, keyPlaceholder = "Name", valuePlaceholder = "Wert", onValueFocus }: Props) {
+export function KeyValueEditor({ rows, onChange, keyPlaceholder, valuePlaceholder, onValueFocus }: Props) {
+  const { t } = useTranslation();
+  const keyPh = keyPlaceholder ?? t("keyValueEditor.namePlaceholder");
+  const valuePh = valuePlaceholder ?? t("keyValueEditor.valuePlaceholder");
   const updateRow = (index: number, patch: Partial<KeyValue>) => {
     onChange(rows.map((row, i) => (i === index ? { ...row, ...patch } : row)));
   };
@@ -26,23 +30,23 @@ export function KeyValueEditor({ rows, onChange, keyPlaceholder = "Name", valueP
       {rows.map((row, index) => (
         <div className="keyvalue-row" key={index}>
           <input
-            placeholder={keyPlaceholder}
+            placeholder={keyPh}
             value={row.key}
             onChange={(e) => updateRow(index, { key: e.target.value })}
           />
           <input
-            placeholder={valuePlaceholder}
+            placeholder={valuePh}
             value={row.value}
             onFocus={() => onValueFocus?.(index)}
             onChange={(e) => updateRow(index, { value: e.target.value })}
           />
-          <button type="button" onClick={() => removeRow(index)} aria-label="Zeile entfernen">
+          <button type="button" onClick={() => removeRow(index)} aria-label={t("keyValueEditor.removeRow")}>
             ×
           </button>
         </div>
       ))}
       <button type="button" onClick={addRow}>
-        + Zeile hinzufügen
+        {t("keyValueEditor.addRow")}
       </button>
     </div>
   );
