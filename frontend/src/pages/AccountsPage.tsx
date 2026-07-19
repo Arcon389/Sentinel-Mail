@@ -85,6 +85,13 @@ export function AccountsPage() {
   };
 
   const onTest = async () => {
+    // A new account is tested with the form's password (required by the API);
+    // an existing account reuses its stored password server-side. Guard the
+    // new-account case so an empty password shows a hint instead of a raw 422.
+    if (!editingId && !form.password) {
+      setTestResult("✗ Bitte zuerst ein Passwort eingeben, um die Verbindung zu testen.");
+      return;
+    }
     setTestResult("Teste Verbindung...");
     try {
       const result = editingId ? await accountsApi.testExisting(editingId) : await accountsApi.testNew(form);

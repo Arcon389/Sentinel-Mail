@@ -16,7 +16,15 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
   if (!response.ok) {
     const body = await response.json().catch(() => ({ detail: response.statusText }));
-    throw new ApiError(response.status, body.detail ?? "Request failed");
+    const { detail } = body;
+    // FastAPI validation errors (422) return `detail` as an array of
+    // { loc, msg, ... }; flatten it into a readable string.
+    const message = Array.isArray(detail)
+      ? detail.map((e) => (typeof e?.msg === "string" ? e.msg : JSON.stringify(e))).join("; ")
+      : typeof detail === "string"
+        ? detail
+        : "Request failed";
+    throw new ApiError(response.status, message);
   }
 
   if (response.status === 204) {

@@ -7,6 +7,16 @@ Format angelehnt an [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ### Hinzugefügt
 
+- **Onboarding-Assistent nach dem ersten Login**: Nach der ersten Anmeldung wird ein Admin
+  einmalig durch einen mehrstufigen Assistenten (`/onboarding`) geführt — IMAP-Konto anlegen
+  (inkl. „Verbindung testen"), SMTP-Prüfung (Status + optionale Testmail), optional Drucker
+  einrichten und eine erste Aktionskette anlegen. Jeder Schritt ist überspringbar. Der
+  Assistent erscheint nur beim allerersten Login; ein persistentes Flag
+  (`users.onboarding_completed_at`) verhindert erneutes Anzeigen. Damit
+  greift der Flow auch, wenn der Admin per `INITIAL_ADMIN_*` angelegt wurde und der bisherige
+  Setup-Assistent (Admin-Anlage) übersprungen wird (Flag via Migration `0005`). Neue Endpunkte
+  `POST /api/auth/complete-onboarding`, `GET /api/system/smtp-status` und
+  `POST /api/system/smtp-test`.
 - **Live-Push (IMAP IDLE)**: Konten können jetzt per IMAP IDLE (RFC 2177) sofort auf
   eingehende Nachrichten reagieren, statt im festen Intervall abgefragt zu werden. Neu pro
   Konto umschaltbar (Feld `use_idle`: Standard/An/Aus) mit globalem Fallback
@@ -31,6 +41,11 @@ Format angelehnt an [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ### Behoben
 
+- Verbindungstest für ein **neues** Konto ohne Passwort lieferte einen rohen
+  `422`-Fehler; der Test-Button prüft jetzt vorab und zeigt einen klaren Hinweis
+  („Bitte zuerst ein Passwort eingeben"). Zusätzlich werden FastAPI-Validierungs-
+  fehler (`detail`-Array) im Frontend jetzt als lesbarer Text statt als
+  `[object Object]` angezeigt.
 - `.gitattributes` ergänzt, das `*.sh` auf LF-Zeilenenden festlegt. Ohne diese Datei
   checkte Git auf Windows (mit `core.autocrlf=true`) die Container-Entrypoints
   `cups/docker-entrypoint.sh` und `backend/docker-entrypoint.sh` mit CRLF aus. Das `\r`
