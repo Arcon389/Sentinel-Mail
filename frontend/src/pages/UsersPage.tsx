@@ -12,6 +12,7 @@ export function UsersPage() {
   const queryClient = useQueryClient();
   const { data: users } = useQuery({ queryKey: ["users"], queryFn: usersApi.list });
 
+  const [showForm, setShowForm] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<"admin" | "user">("user");
@@ -25,6 +26,7 @@ export function UsersPage() {
       setPassword("");
       setRole("user");
       setError(null);
+      setShowForm(false);
     },
     onError: (err) => setError(err instanceof ApiError ? err.message : t("users.createFailed")),
   });
@@ -41,6 +43,12 @@ export function UsersPage() {
 
   return (
     <AppShell title={t("users.title")}>
+      {!showForm && (
+        <button type="button" onClick={() => setShowForm(true)}>
+          {t("users.newUserButton")}
+        </button>
+      )}
+      {showForm && (
       <form
           className="account-form"
           onSubmit={(e) => {
@@ -65,8 +73,14 @@ export function UsersPage() {
             </select>
           </label>
           {error && <p className="error">{error}</p>}
-          <button type="submit">{t("common.create")}</button>
+          <div className="button-row">
+            <button type="submit">{t("common.create")}</button>
+            <button type="button" onClick={() => { setShowForm(false); setError(null); }}>
+              {t("common.cancel")}
+            </button>
+          </div>
         </form>
+      )}
 
         <h2>{t("users.usersHeading")}</h2>
         <table>

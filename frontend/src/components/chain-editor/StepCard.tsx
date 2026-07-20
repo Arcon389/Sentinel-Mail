@@ -11,18 +11,38 @@ import { SendEmailStepForm } from "./SendEmailStepForm";
 
 interface Props {
   step: ChainStep;
+  index: number;
+  isFirst: boolean;
+  isLast: boolean;
   accountId: string;
   onChange: (config: unknown) => void;
   onErrorChange: (onError: OnError) => void;
+  onTitleChange: (title: string | null) => void;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
   onDelete: () => void;
 }
 
-export function StepCard({ step, accountId, onChange, onErrorChange, onDelete }: Props) {
+export function StepCard({
+  step,
+  index,
+  isFirst,
+  isLast,
+  accountId,
+  onChange,
+  onErrorChange,
+  onTitleChange,
+  onMoveUp,
+  onMoveDown,
+  onDelete,
+}: Props) {
   const { t } = useTranslation();
   const [collapsed, setCollapsed] = useState(false);
+  const [titleDraft, setTitleDraft] = useState(step.title ?? "");
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: step.id });
 
   const style = { transform: CSS.Transform.toString(transform), transition };
+  const typeLabel = t(stepTypeLabelKey(step.step_type));
 
   return (
     <div className="step-card" ref={setNodeRef} style={style}>
@@ -31,8 +51,14 @@ export function StepCard({ step, accountId, onChange, onErrorChange, onDelete }:
           ⠿
         </span>
         <strong>
-          {step.position + 1}. {t(stepTypeLabelKey(step.step_type))}
+          {index + 1}. {step.title || typeLabel}
         </strong>
+        <button type="button" aria-label={t("stepCard.moveUp")} disabled={isFirst} onClick={onMoveUp}>
+          ▲
+        </button>
+        <button type="button" aria-label={t("stepCard.moveDown")} disabled={isLast} onClick={onMoveDown}>
+          ▼
+        </button>
         <button type="button" onClick={() => setCollapsed(!collapsed)}>
           {collapsed ? t("stepCard.expand") : t("stepCard.collapse")}
         </button>
@@ -47,6 +73,18 @@ export function StepCard({ step, accountId, onChange, onErrorChange, onDelete }:
 
       {!collapsed && (
         <div className="step-card-body">
+          <label>
+            {t("stepCard.titleLabel")}
+            <input
+              value={titleDraft}
+              placeholder={typeLabel}
+              onChange={(e) => setTitleDraft(e.target.value)}
+              onBlur={() => {
+                const next = titleDraft.trim();
+                if (next !== (step.title ?? "")) onTitleChange(next || null);
+              }}
+            />
+          </label>
           <p className="hint step-description">{t(stepTypeDescriptionKey(step.step_type))}</p>
           {(step.step_type === "rest_call" || step.step_type === "webhook") && (
             <RestStepForm

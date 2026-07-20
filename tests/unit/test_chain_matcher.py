@@ -4,11 +4,18 @@ from datetime import datetime
 import pytest
 
 from worker.chain_matcher import (
+    account_allows_sender,
     chain_needs_body,
     is_within_time_window,
     matches_conditions,
     resolve_timezone,
 )
+
+
+@dataclass
+class FakeAccount:
+    sender_list: str | None = None
+    sender_list_mode: str = "off"
 
 
 @dataclass
@@ -104,6 +111,28 @@ def test_all_vs_any_combination():
 def test_invalid_regex_does_not_raise():
     chain = FakeChain(subject_regex="(")  # invalid pattern
     assert matches_conditions(chain, "", "anything", None) is False
+
+
+# --- account sender gate -------------------------------------------------
+
+def test_account_gate_off_allows_all():
+    assert account_allows_sender(FakeAccount(sender_list="boss@chef.de", sender_list_mode="off"), "x@other.de")
+
+
+def test_account_gate_empty_list_allows_all():
+    assert account_allows_sender(FakeAccount(sender_list="  \n  ", sender_list_mode="whitelist"), "x@other.de")
+
+
+def test_account_gate_whitelist():
+    acc = FakeAccount(sender_list="@chef.de\ntrusted@partner.com", sender_list_mode="whitelist")
+    assert account_allows_sender(acc, "Boss <boss@CHEF.de>")
+    assert not account_allows_sender(acc, "spam@other.de")
+
+
+def test_account_gate_blacklist():
+    acc = FakeAccount(sender_list="spam@bad.de\n@blocked.com", sender_list_mode="blacklist")
+    assert not account_allows_sender(acc, "noreply@BLOCKED.com")
+    assert account_allows_sender(acc, "boss@chef.de")
 
 
 # --- helpers -------------------------------------------------------------

@@ -1,5 +1,7 @@
 import { api } from "./client";
 
+export type SenderListMode = "off" | "whitelist" | "blacklist";
+
 export interface AccountState {
   last_unread_count: number | null;
   last_checked_at: string | null;
@@ -17,6 +19,8 @@ export interface Account {
   poll_interval_seconds: number | null;
   use_idle: boolean | null;
   is_active: boolean;
+  sender_list: string | null;
+  sender_list_mode: SenderListMode;
   created_at: string;
   updated_at: string;
   state?: AccountState | null;
@@ -35,6 +39,8 @@ export interface AccountInput {
   poll_interval_seconds: number | null;
   use_idle: boolean | null;
   is_active: boolean;
+  sender_list: string | null;
+  sender_list_mode: SenderListMode;
 }
 
 export interface TestConnectionResult {

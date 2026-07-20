@@ -1,7 +1,10 @@
 import uuid
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, Field
+
+SenderListMode = Literal["off", "whitelist", "blacklist"]
 
 
 class AccountBase(BaseModel):
@@ -14,6 +17,8 @@ class AccountBase(BaseModel):
     poll_interval_seconds: int | None = Field(default=None, ge=5)
     use_idle: bool | None = None
     is_active: bool = True
+    sender_list: str | None = None
+    sender_list_mode: SenderListMode = "off"
 
 
 class AccountCreate(AccountBase):
@@ -31,6 +36,8 @@ class AccountUpdate(BaseModel):
     poll_interval_seconds: int | None = Field(default=None, ge=5)
     use_idle: bool | None = None
     is_active: bool | None = None
+    sender_list: str | None = None
+    sender_list_mode: SenderListMode | None = None
 
 
 class AccountOut(AccountBase):

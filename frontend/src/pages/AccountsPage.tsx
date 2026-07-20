@@ -17,6 +17,8 @@ const emptyForm: AccountInput = {
   poll_interval_seconds: null,
   use_idle: null,
   is_active: true,
+  sender_list: null,
+  sender_list_mode: "off",
 };
 
 // Tri-state <select> value <-> use_idle (null = global default).
@@ -33,15 +35,24 @@ export function AccountsPage() {
   const { data: defaults } = useQuery({ queryKey: ["account-defaults"], queryFn: accountsApi.defaults });
 
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<AccountInput>(emptyForm);
   const [testResult, setTestResult] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+
+  const closeForm = () => {
+    setShowForm(false);
+    setEditingId(null);
+    setForm(emptyForm);
+    setFormError(null);
+    setTestResult(null);
+  };
 
   const createMutation = useMutation({
     mutationFn: accountsApi.create,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["accounts"] });
-      setForm(emptyForm);
+      closeForm();
     },
     onError: (err) => setFormError(err instanceof ApiError ? err.message : t("accounts.saveFailed")),
   });
@@ -50,8 +61,7 @@ export function AccountsPage() {
     mutationFn: ({ id, input }: { id: string; input: Partial<AccountInput> }) => accountsApi.update(id, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["accounts"] });
-      setEditingId(null);
-      setForm(emptyForm);
+      closeForm();
     },
     onError: (err) => setFormError(err instanceof ApiError ? err.message : t("accounts.saveFailed")),
   });
@@ -74,6 +84,9 @@ export function AccountsPage() {
 
   const onEdit = (account: Account) => {
     setEditingId(account.id);
+    setShowForm(true);
+    setFormError(null);
+    setTestResult(null);
     setForm({
       name: account.name,
       imap_host: account.imap_host,
@@ -85,6 +98,8 @@ export function AccountsPage() {
       poll_interval_seconds: account.poll_interval_seconds,
       use_idle: account.use_idle,
       is_active: account.is_active,
+      sender_list: account.sender_list,
+      sender_list_mode: account.sender_list_mode,
     });
   };
 
@@ -107,6 +122,12 @@ export function AccountsPage() {
 
   return (
     <AppShell title={t("nav.accounts")}>
+      {!showForm && !editingId && (
+        <button type="button" onClick={() => { setForm(emptyForm); setShowForm(true); }}>
+          {t("accounts.newAccountButton")}
+        </button>
+      )}
+      {(showForm || editingId) && (
       <form onSubmit={onSubmit} className="account-form">
           <h2>{editingId ? t("accounts.editAccount") : t("accounts.newAccount")}</h2>
           <label>
@@ -201,6 +222,28 @@ export function AccountsPage() {
           </label>
           <p className="hint">{t("accounts.livePushHint")}</p>
           <label>
+            {t("accounts.senderListMode")}
+            <select
+              value={form.sender_list_mode}
+              onChange={(e) => setForm({ ...form, sender_list_mode: e.target.value as AccountInput["sender_list_mode"] })}
+            >
+              <option value="off">{t("accounts.senderListModeOff")}</option>
+              <option value="whitelist">{t("accounts.senderListModeWhitelist")}</option>
+              <option value="blacklist">{t("accounts.senderListModeBlacklist")}</option>
+            </select>
+          </label>
+          {form.sender_list_mode !== "off" && (
+            <label>
+              {t("accounts.senderList")}
+              <textarea
+                rows={4}
+                value={form.sender_list ?? ""}
+                onChange={(e) => setForm({ ...form, sender_list: e.target.value || null })}
+              />
+            </label>
+          )}
+          <p className="hint">{t("accounts.senderListHint")}</p>
+          <label>
             <input
               type="checkbox"
               checked={form.is_active}
@@ -215,19 +258,12 @@ export function AccountsPage() {
               {t("accounts.testConnection")}
             </button>
             <button type="submit">{editingId ? t("common.save") : t("common.create")}</button>
-            {editingId && (
-              <button
-                type="button"
-                onClick={() => {
-                  setEditingId(null);
-                  setForm(emptyForm);
-                }}
-              >
-                {t("common.cancel")}
-              </button>
-            )}
+            <button type="button" onClick={closeForm}>
+              {t("common.cancel")}
+            </button>
           </div>
         </form>
+      )}
 
         <h2>{t("accounts.accountsHeading")}</h2>
         {isLoading && <p>{t("common.loading")}</p>}

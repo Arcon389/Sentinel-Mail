@@ -94,6 +94,12 @@ export function ActionChainEditorPage() {
     onSuccess: invalidateChain,
   });
 
+  const updateStepTitleMutation = useMutation({
+    mutationFn: ({ chainId, stepId, title }: { chainId: string; stepId: string; title: string | null }) =>
+      actionChainsApi.updateStep(chainId, stepId, { title }),
+    onSuccess: invalidateChain,
+  });
+
   const deleteStepMutation = useMutation({
     mutationFn: ({ chainId, stepId }: { chainId: string; stepId: string }) => actionChainsApi.removeStep(chainId, stepId),
     onSuccess: invalidateChain,
@@ -391,6 +397,7 @@ export function ActionChainEditorPage() {
                     onReorder={(stepIds) => reorderStepsMutation.mutate({ chainId: chain.id, stepIds })}
                     onStepChange={(stepId, config) => updateStepMutation.mutate({ chainId: chain.id, stepId, config })}
                     onStepErrorChange={(stepId, onError) => updateStepErrorMutation.mutate({ chainId: chain.id, stepId, onError })}
+                    onStepTitleChange={(stepId, title) => updateStepTitleMutation.mutate({ chainId: chain.id, stepId, title })}
                     onStepDelete={(stepId) => deleteStepMutation.mutate({ chainId: chain.id, stepId })}
                   />
                   <StepTypeSelector onAdd={(stepType) => addStepMutation.mutate({ chainId: chain.id, stepType })} />

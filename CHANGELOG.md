@@ -7,6 +7,23 @@ Format angelehnt an [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ### Hinzugefügt
 
+- **Anlege-Formulare hinter „Neu"-Button**: Auf der Konten- und der Benutzer-Seite ist das
+  Anlege-Formular standardmäßig ausgeblendet und öffnet sich erst per Button „+ Neues Konto" bzw.
+  „+ Neuer Benutzer" (`frontend/src/pages/AccountsPage.tsx`, `frontend/src/pages/UsersPage.tsx`);
+  „Bearbeiten" öffnet es vorbefüllt, „Abbrechen"/Speichern schließt es wieder.
+- **Kontoweiter Absender-Filter (Whitelist/Blacklist)**: Pro IMAP-Konto lässt sich eine
+  Absenderliste mit Modus Whitelist oder Blacklist hinterlegen (neue Spalten `sender_list`/
+  `sender_list_mode`, Migration `0007`). Der Filter greift kontoweit im Worker, bevor eine Kette
+  startet (`account_allows_sender` in `worker/worker/chain_matcher.py`, Hook in
+  `worker/worker/poller.py`).
+- **Anpassbare Schritt-Überschrift**: Kettenschritte können eine eigene Überschrift erhalten
+  (neue Spalte `chain_steps.title`, Migration `0008`). Die vorangestellte Nummer wird aus der
+  Listenposition abgeleitet und bleibt so unabhängig von der Überschrift immer korrekt fortlaufend
+  (`frontend/src/components/chain-editor/StepCard.tsx`, `.../StepList.tsx`).
+- **Schritte per Auf/Ab-Button verschieben**: Zusätzlich zum Drag&Drop lassen sich Schritte über
+  ▲/▼-Buttons in der Reihenfolge verschieben; nutzt den bestehenden Reorder-Endpunkt
+  (`frontend/src/components/chain-editor/StepCard.tsx`, `.../StepList.tsx`).
+
 - **Dashboard – Spalte „Zuletzt ausgelöst"**: Die Konten-Tabelle auf dem Dashboard
   (`frontend/src/pages/DashboardPage.tsx`) zeigt pro Konto den Zeitpunkt der letzten Auslösung
   (jüngster `TRIGGER_DETECTED`-Eintrag). Der Wert wird on-the-fly aus `execution_logs` aggregiert

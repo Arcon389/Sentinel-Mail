@@ -86,6 +86,7 @@
     "deleteAccountConfirm": "Konto \"{{name}}\" wirklich löschen? Dies kann nicht rückgängig gemacht werden.",
     "editAccount": "Konto bearbeiten",
     "newAccount": "Neues Konto",
+    "newAccountButton": "+ Neues Konto",
     "name": "Name",
     "imapHost": "IMAP-Host",
     "port": "Port",
@@ -107,6 +108,12 @@
     "livePushOn": "An – sofort auf neue Mails reagieren",
     "livePushOff": "Aus – nur zeitgesteuertes Polling",
     "livePushHint": "Bei „An\" hält der Worker eine Verbindung offen und reagiert live auf eingehende Nachrichten (IMAP IDLE), statt im Poll-Intervall abzufragen. Ein seltener Sicherheits-Poll läuft weiterhin. Server ohne IDLE-Unterstützung fallen automatisch auf Polling zurück.",
+    "senderListMode": "Absenderfilter (kontoweit)",
+    "senderListModeOff": "Aus – alle Absender",
+    "senderListModeWhitelist": "Whitelist – nur gelistete Absender",
+    "senderListModeBlacklist": "Blacklist – gelistete Absender blockieren",
+    "senderList": "Absenderliste",
+    "senderListHint": "Ein Absender oder eine Domain pro Zeile. Teiltreffer, Groß-/Kleinschreibung wird ignoriert. Der Filter greift kontoweit, bevor eine Kette startet.",
     "activeMonitoring": "Aktiv (Überwachung läuft)",
     "testConnection": "Verbindung testen",
     "accountsHeading": "Konten",
@@ -145,6 +152,7 @@
   "users": {
     "title": "Benutzerverwaltung",
     "newUser": "Neuer Benutzer",
+    "newUserButton": "+ Neuer Benutzer",
     "email": "E-Mail",
     "password": "Passwort",
     "role": "Rolle",
@@ -246,7 +254,10 @@
     "expand": "Aufklappen",
     "collapse": "Zuklappen",
     "onErrorAbort": "Bei Fehler: Kette abbrechen",
-    "onErrorContinue": "Bei Fehler: fortfahren"
+    "onErrorContinue": "Bei Fehler: fortfahren",
+    "titleLabel": "Überschrift",
+    "moveUp": "Nach oben verschieben",
+    "moveDown": "Nach unten verschieben"
   },
   "stepList": {
     "empty": "Noch keine Schritte. Füge unten einen Schritt hinzu."

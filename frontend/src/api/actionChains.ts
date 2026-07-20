@@ -43,6 +43,7 @@ export interface ChainStep {
   id: string;
   chain_id: string;
   position: number;
+  title: string | null;
   step_type: StepType;
   config: HttpStepConfig | SendEmailStepConfig | PrintStepConfig | PauseStepConfig | Record<string, unknown>;
   on_error: OnError;
@@ -112,7 +113,7 @@ export const actionChainsApi = {
 
   addStep: (chainId: string, step: { step_type: StepType; config: unknown; on_error: OnError }) =>
     api.post<ChainStep>(`/action-chains/${chainId}/steps`, step),
-  updateStep: (chainId: string, stepId: string, step: { config?: unknown; on_error?: OnError }) =>
+  updateStep: (chainId: string, stepId: string, step: { config?: unknown; on_error?: OnError; title?: string | null }) =>
     api.patch<ChainStep>(`/action-chains/${chainId}/steps/${stepId}`, step),
   removeStep: (chainId: string, stepId: string) => api.delete<void>(`/action-chains/${chainId}/steps/${stepId}`),
   reorderSteps: (chainId: string, stepIds: string[]) =>

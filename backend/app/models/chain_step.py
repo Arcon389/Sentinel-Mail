@@ -1,7 +1,7 @@
 import enum
 import uuid
 
-from sqlalchemy import Enum, ForeignKey, Integer
+from sqlalchemy import Enum, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -37,6 +37,8 @@ class ChainStep(Base):
         UUID(as_uuid=True), ForeignKey("action_chains.id", ondelete="CASCADE"), nullable=False, index=True
     )
     position: Mapped[int] = mapped_column(Integer, nullable=False)
+    # Optional user-defined heading; falls back to the step-type label in the UI.
+    title: Mapped[str | None] = mapped_column(String(255), nullable=True)
     step_type: Mapped[StepType] = mapped_column(
         Enum(StepType, name="step_type", values_callable=lambda enum_cls: [e.value for e in enum_cls]),
         nullable=False,

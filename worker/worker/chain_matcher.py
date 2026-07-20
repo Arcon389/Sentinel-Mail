@@ -66,6 +66,29 @@ def _regex_matches(pattern: str, value: str) -> bool:
         return False
 
 
+def account_allows_sender(account, sender: str) -> bool:
+    """Account-wide sender gate applied before any chain runs.
+
+    Entries are one per line; each is a case-insensitive substring matched against
+    the mail's sender. In "whitelist" mode the mail passes only if some entry
+    matches; in "blacklist" mode it is rejected if some entry matches. "off" or an
+    empty list never restricts.
+    """
+    mode = getattr(account, "sender_list_mode", "off") or "off"
+    if mode == "off":
+        return True
+
+    entries = [line.strip() for line in (account.sender_list or "").splitlines() if line.strip()]
+    if not entries:
+        return True
+
+    sender_lower = (sender or "").lower()
+    hit = any(entry.lower() in sender_lower for entry in entries)
+    if mode == "whitelist":
+        return hit
+    return not hit
+
+
 def matches_conditions(chain, sender: str, subject: str, body: str | None) -> bool:
     """True if the triggering mail satisfies the chain's conditions.
 

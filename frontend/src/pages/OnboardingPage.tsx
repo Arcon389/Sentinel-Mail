@@ -30,6 +30,8 @@ const emptyAccount: AccountInput = {
   poll_interval_seconds: null,
   use_idle: null,
   is_active: true,
+  sender_list: null,
+  sender_list_mode: "off",
 };
 
 function chainDefaults(accountId: string, name: string, trigger: TriggerType): ActionChainInput {

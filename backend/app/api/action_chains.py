@@ -100,6 +100,7 @@ def create_step(chain_id: uuid.UUID, payload: ChainStepCreate, db: Session = Dep
         step_type=payload.step_type,
         config=payload.config,
         on_error=payload.on_error,
+        title=payload.title,
     )
     db.add(step)
     db.commit()
@@ -117,6 +118,8 @@ def update_step(chain_id: uuid.UUID, step_id: uuid.UUID, payload: ChainStepUpdat
             raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc)) from exc
     if payload.on_error is not None:
         step.on_error = payload.on_error
+    if "title" in payload.model_fields_set:
+        step.title = payload.title or None
     db.commit()
     db.refresh(step)
     return step

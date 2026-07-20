@@ -43,6 +43,7 @@ class ChainStepCreate(BaseModel):
     step_type: StepType
     config: dict
     on_error: OnError = OnError.ABORT_CHAIN
+    title: str | None = Field(default=None, max_length=255)
 
     @field_validator("config")
     @classmethod
@@ -56,12 +57,14 @@ class ChainStepCreate(BaseModel):
 class ChainStepUpdate(BaseModel):
     config: dict | None = None
     on_error: OnError | None = None
+    title: str | None = Field(default=None, max_length=255)
 
 
 class ChainStepOut(BaseModel):
     id: uuid.UUID
     chain_id: uuid.UUID
     position: int
+    title: str | None
     step_type: StepType
     config: dict
     on_error: OnError

@@ -15,7 +15,13 @@ from app.models.execution_log import EventType, ExecutionLog, LogLevel
 from app.security.crypto import decrypt
 from app.services.imap_client import AccountSnapshot, ImapConnectionError, fetch_full_message, fetch_snapshot
 from worker.chain_executor import execute_chain
-from worker.chain_matcher import chain_needs_body, is_within_time_window, matches_conditions, resolve_timezone
+from worker.chain_matcher import (
+    account_allows_sender,
+    chain_needs_body,
+    is_within_time_window,
+    matches_conditions,
+    resolve_timezone,
+)
 from worker.trigger_detector import detect_transitions
 
 logger = logging.getLogger("sentinel_mail.worker.poller")
@@ -125,6 +131,13 @@ def _default_trigger_handler(db: Session, account: Account, trigger_type: Trigge
         "subject": snapshot.latest_subject or "",
         "sender": snapshot.latest_sender or "",
     }
+
+    if not account_allows_sender(account, context["sender"]):
+        logger.info(
+            "Sender '%s' blocked by account '%s' %s-list; no chains run",
+            context["sender"], account.name, account.sender_list_mode,
+        )
+        return
 
     now = datetime.now(resolve_timezone(get_settings().app_timezone))
     body = _load_body_if_needed(account, matching_chains, snapshot)

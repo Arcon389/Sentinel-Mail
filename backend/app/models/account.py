@@ -27,6 +27,11 @@ class Account(Base):
     use_idle: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
+    # Account-wide sender gate, applied before any chain runs. One entry per line;
+    # matching is case-insensitive substring. Modes: "off" | "whitelist" | "blacklist".
+    sender_list: Mapped[str | None] = mapped_column(String, nullable=True)
+    sender_list_mode: Mapped[str] = mapped_column(String(10), nullable=False, default="off")
+
     created_at: Mapped[datetime] = mapped_column(server_default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now(), nullable=False)
 

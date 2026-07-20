@@ -10,10 +10,19 @@ interface Props {
   onReorder: (stepIds: string[]) => void;
   onStepChange: (stepId: string, config: unknown) => void;
   onStepErrorChange: (stepId: string, onError: OnError) => void;
+  onStepTitleChange: (stepId: string, title: string | null) => void;
   onStepDelete: (stepId: string) => void;
 }
 
-export function StepList({ steps, accountId, onReorder, onStepChange, onStepErrorChange, onStepDelete }: Props) {
+export function StepList({
+  steps,
+  accountId,
+  onReorder,
+  onStepChange,
+  onStepErrorChange,
+  onStepTitleChange,
+  onStepDelete,
+}: Props) {
   const { t } = useTranslation();
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
@@ -30,6 +39,14 @@ export function StepList({ steps, accountId, onReorder, onStepChange, onStepErro
     onReorder(reordered);
   };
 
+  const moveStep = (index: number, direction: -1 | 1) => {
+    const target = index + direction;
+    if (target < 0 || target >= steps.length) return;
+    const ids = steps.map((s) => s.id);
+    [ids[index], ids[target]] = [ids[target], ids[index]];
+    onReorder(ids);
+  };
+
   if (steps.length === 0) {
     return <p>{t("stepList.empty")}</p>;
   }
@@ -38,13 +55,19 @@ export function StepList({ steps, accountId, onReorder, onStepChange, onStepErro
     <DndContext sensors={sensors} onDragEnd={onDragEnd}>
       <SortableContext items={steps.map((s) => s.id)} strategy={verticalListSortingStrategy}>
         <div className="step-list">
-          {steps.map((step) => (
+          {steps.map((step, index) => (
             <StepCard
               key={step.id}
               step={step}
+              index={index}
+              isFirst={index === 0}
+              isLast={index === steps.length - 1}
               accountId={accountId}
               onChange={(config) => onStepChange(step.id, config)}
               onErrorChange={(onError) => onStepErrorChange(step.id, onError)}
+              onTitleChange={(title) => onStepTitleChange(step.id, title)}
+              onMoveUp={() => moveStep(index, -1)}
+              onMoveDown={() => moveStep(index, 1)}
               onDelete={() => onStepDelete(step.id)}
             />
           ))}
