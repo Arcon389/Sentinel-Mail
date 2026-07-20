@@ -7,6 +7,17 @@ Format angelehnt an [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ### Hinzugefügt
 
+- **Dashboard – Spalte „Zuletzt ausgelöst"**: Die Konten-Tabelle auf dem Dashboard
+  (`frontend/src/pages/DashboardPage.tsx`) zeigt pro Konto den Zeitpunkt der letzten Auslösung
+  (jüngster `TRIGGER_DETECTED`-Eintrag). Der Wert wird on-the-fly aus `execution_logs` aggregiert
+  (`_attach_last_triggered` in `backend/app/api/accounts.py`, Feld `last_triggered_at` in
+  `AccountWithState`), ohne neue DB-Spalte.
+- **Dashboard – Aktivitäts-Charts (live)**: Neuer Chart-Bereich mit Zeitreihen für „Auslösungen"
+  (`TRIGGER_DETECTED`) und „Ketten" (`CHAIN_COMPLETED`) und Fensterauswahl 1h/24h/7d/1m
+  (Recharts, Auto-Refresh alle 15 s). Datenquelle ist der neue Endpunkt
+  `GET /api/stats/timeseries` (`backend/app/api/stats.py`, `backend/app/services/stats.py`), der
+  die Ereignisse in gleichmäßige Zeit-Buckets aggregiert und Lücken mit 0 füllt.
+
 - **Drucker nachträglich bearbeiten**: Auf der Drucker-Seite (`/printers`) gibt es pro Drucker
   jetzt einen „Bearbeiten"-Button, über den sich Name, Standardoptionen (Kopien, Duplex, Farbe,
   Papierformat) und die Verbindungs-URI ändern lassen

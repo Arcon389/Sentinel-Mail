@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import select
 
-from app.api import accounts, action_chains, auth, logs, printers, system, users
+from app.api import accounts, action_chains, auth, logs, printers, stats, system, users
 from app.config import get_settings
 from app.database import SessionLocal
 from app.logging_config import configure_logging
@@ -37,6 +37,7 @@ app.include_router(accounts.router)
 app.include_router(action_chains.router)
 app.include_router(action_chains.placeholders_router)
 app.include_router(logs.router)
+app.include_router(stats.router)
 app.include_router(printers.router)
 app.include_router(system.router)
 app.include_router(users.router)

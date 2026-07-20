@@ -21,6 +21,7 @@ export interface Account {
   updated_at: string;
   state?: AccountState | null;
   active_chain_count: number;
+  last_triggered_at?: string | null;
 }
 
 export interface AccountInput {

@@ -52,6 +52,7 @@ class AccountStateOut(BaseModel):
 class AccountWithState(AccountOut):
     state: AccountStateOut | None = None
     active_chain_count: int = 0
+    last_triggered_at: datetime | None = None
 
 
 class TestConnectionResult(BaseModel):

@@ -71,7 +71,16 @@
     "noAccounts": "Noch keine IMAP-Konten angelegt.",
     "statusPaused": "Pausiert",
     "statusError": "Fehler",
-    "statusActive": "Aktiv"
+    "statusActive": "Aktiv",
+    "lastTriggered": "Zuletzt ausgelöst",
+    "neverTriggered": "noch nie ausgelöst",
+    "charts": "Aktivität",
+    "triggers": "Auslösungen",
+    "chains": "Ketten",
+    "window1h": "1 Std.",
+    "window24h": "24 Std.",
+    "window7d": "7 Tage",
+    "window1m": "1 Monat"
   },
   "accounts": {
     "deleteAccountConfirm": "Konto \"{{name}}\" wirklich löschen? Dies kann nicht rückgängig gemacht werden.",

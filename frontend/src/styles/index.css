@@ -1072,3 +1072,46 @@ td button {
   color: var(--danger);
   background: var(--danger-soft);
 }
+
+.stats-charts {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.stats-charts-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.stats-charts-header h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.stats-window-switch {
+  display: inline-flex;
+  gap: 0.25rem;
+}
+
+.stats-window-switch button {
+  padding: 0.25rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.stats-window-switch button.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-contrast);
+}

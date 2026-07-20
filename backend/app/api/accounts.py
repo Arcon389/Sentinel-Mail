@@ -10,6 +10,7 @@ from app.database import get_db
 from app.models.account import Account
 from app.models.account_state import AccountState
 from app.models.action_chain import ActionChain
+from app.models.execution_log import EventType, ExecutionLog
 from app.schemas.account import (
     AccountCreate,
     AccountDefaults,
@@ -44,10 +45,25 @@ def _attach_active_chain_counts(db: Session, accounts: list[Account]) -> list[Ac
     return accounts
 
 
+def _attach_last_triggered(db: Session, accounts: list[Account]) -> list[Account]:
+    latest = dict(
+        db.execute(
+            select(ExecutionLog.account_id, func.max(ExecutionLog.timestamp))
+            .where(ExecutionLog.event_type == EventType.TRIGGER_DETECTED)
+            .group_by(ExecutionLog.account_id)
+        ).all()
+    )
+    for account in accounts:
+        account.last_triggered_at = latest.get(account.id)
+    return accounts
+
+
 @router.get("", response_model=list[AccountWithState])
 def list_accounts(db: Session = Depends(get_db)) -> list[Account]:
     accounts = list(db.scalars(select(Account).order_by(Account.name)).all())
-    return _attach_active_chain_counts(db, accounts)
+    _attach_active_chain_counts(db, accounts)
+    _attach_last_triggered(db, accounts)
+    return accounts
 
 
 @router.post("", response_model=AccountOut, status_code=status.HTTP_201_CREATED)
@@ -75,6 +91,7 @@ def get_account_defaults() -> AccountDefaults:
 def get_account(account_id: uuid.UUID, db: Session = Depends(get_db)) -> Account:
     account = _get_account_or_404(db, account_id)
     _attach_active_chain_counts(db, [account])
+    _attach_last_triggered(db, [account])
     return account
 
 

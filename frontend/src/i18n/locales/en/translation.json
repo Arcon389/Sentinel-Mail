@@ -71,7 +71,16 @@
     "noAccounts": "No IMAP accounts created yet.",
     "statusPaused": "Paused",
     "statusError": "Error",
-    "statusActive": "Active"
+    "statusActive": "Active",
+    "lastTriggered": "Last triggered",
+    "neverTriggered": "never triggered",
+    "charts": "Activity",
+    "triggers": "Triggers",
+    "chains": "Chains",
+    "window1h": "1 h",
+    "window24h": "24 h",
+    "window7d": "7 d",
+    "window1m": "1 mo"
   },
   "accounts": {
     "deleteAccountConfirm": "Really delete account \"{{name}}\"? This cannot be undone.",
