@@ -31,6 +31,22 @@ Format angelehnt an [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ### Behoben
 
+- **Stack startet nicht bei CRLF-Zeilenenden**: Gelangten die Quelldateien nicht per frischem
+  `git clone`, sondern kopiert/gezippt aus einem Windows-Arbeitsbaum auf den Server, hatten die
+  Entrypoint-Skripte CRLF-Zeilenenden. Die Shebang-Zeile endete dann auf `\r`, der Kernel suchte
+  den Interpreter `/bin/sh\r` und `web`/`cups` brachen mit `exec ./docker-entrypoint.sh: no such
+  file or directory` ab. Da `web` nie startete, lief `alembic upgrade head` nicht, wodurch
+  Folgefehler wie `relation "accounts" does not exist` (db/worker) und `host not found in
+  upstream "web"` (frontend) entstanden. `backend/Dockerfile` und `cups/Dockerfile` strippen ein
+  evtl. vorhandenes `\r` jetzt beim Build (`sed -i 's/\r$//'`), sodass der Build unabhängig von
+  den Zeilenenden der Quelldateien funktioniert.
+- **debconf-Warnungen beim Docker-Build**: Beim `docker build` (v.a. des `cups`-Images)
+  erschienen Meldungen wie `debconf: unable to initialize frontend: Dialog`/`Readline` und
+  `Can't locate Term/ReadLine.pm in @INC`. Das war nur Log-Rauschen (der Build lief durch),
+  weil `apt-get` in einem Container ohne interaktives Terminal die debconf-Frontends
+  durchprobierte. Die Dockerfiles (`cups/`, `backend/`, `worker/`) setzen jetzt
+  `ARG DEBIAN_FRONTEND=noninteractive` vor dem `apt-get`-Aufruf, wodurch debconf direkt
+  nicht-interaktiv läuft und keine Frontend-Warnungen mehr ausgibt.
 - **Netzwerkdrucker werden nicht erkannt**: Der `cups`-Container lief am Docker-Bridge-Netz
   (`ports: "631:631"`), wodurch mDNS-Multicast und SNMP-Broadcasts im Container-Subnetz
   hängenblieben und Drucker im LAN (z.B. `192.168.103.6`) nicht gefunden wurden. Der Service
