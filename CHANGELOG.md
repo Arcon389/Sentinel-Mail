@@ -5,6 +5,15 @@ Format angelehnt an [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ## [Unreleased]
 
+### Behoben
+
+- **Dashboard zeigte Konten-Daten erst nach Reload aktuell**: Der zentrale API-Client
+  (`frontend/src/api/client.ts`) setzte kein `cache`-Verhalten, wodurch der Browser GET-Anfragen
+  potenziell aus dem HTTP-Cache statt frisch vom Server beantwortete. Dadurch aktualisierten sich
+  z. B. „Ungelesen" und „Zuletzt ausgelöst" trotz 15s-Polling nicht live, sondern erst nach einem
+  vollständigen Neuladen der Seite. Fix: `cache: "no-store"` bei jeder Anfrage, betrifft alle
+  Seiten, die über diesen Client Daten laden.
+
 ### Dokumentation
 
 - **`.env.example` – mehr Wege zum Erzeugen von `ENCRYPTION_KEY`/`JWT_SECRET`**: Neben dem
