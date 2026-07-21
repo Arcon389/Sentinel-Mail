@@ -7,6 +7,13 @@ Format angelehnt an [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ### Hinzugefügt
 
+- **Logeintrag „Kette gestartet"**: Zu Beginn jeder Kettenausführung wird jetzt ein
+  `CHAIN_STARTED`-Eintrag geschrieben (`worker/worker/chain_executor.py`), sodass der Übergang von
+  Auslösung zu Ausführung in den Logs sichtbar ist (Migration `0009` ergänzt den Enum-Wert).
+- **Detail-Logs ein-/ausblendbar**: Die Log-Ansicht (`/logs`) blendet Schritt-Detaileinträge
+  (`STEP_EXECUTED`) standardmäßig aus; eine Checkbox „Detail-Logs anzeigen" bzw. die Statusauswahl
+  „Detail" blendet sie bei Bedarf ein (`frontend/src/pages/LogsPage.tsx`, Query-Param
+  `include_debug` in `backend/app/api/logs.py`).
 - **Anlege-Formulare hinter „Neu"-Button**: Auf der Konten- und der Benutzer-Seite ist das
   Anlege-Formular standardmäßig ausgeblendet und öffnet sich erst per Button „+ Neues Konto" bzw.
   „+ Neuer Benutzer" (`frontend/src/pages/AccountsPage.tsx`, `frontend/src/pages/UsersPage.tsx`);
@@ -45,6 +52,10 @@ Format angelehnt an [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ### Geändert
 
+- **`STEP_EXECUTED` auf neuen Loglevel `debug`**: Erfolgreiche Einzelschritte laufen nicht mehr
+  auf `INFO`, sondern auf dem neuen, niedrigsten Loglevel `debug` und sind damit standardmäßig
+  ausgeblendet (`backend/app/models/execution_log.py`, `worker/worker/chain_executor.py`,
+  Migration `0009`).
 - **Webhook-/REST-Editor aufgeräumt**: Da Header und Body optional sind, sind ihre Rubriken im
   Schritt-Editor (`frontend/src/components/rest-wizard/RestStepForm.tsx`) jetzt standardmäßig
   eingeklappt (native `<details>`/`<summary>`, Summary mit „(optional)"-Hinweis) und werden nur

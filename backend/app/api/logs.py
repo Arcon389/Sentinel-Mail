@@ -18,6 +18,7 @@ def list_logs(
     account_id: uuid.UUID | None = None,
     chain_id: uuid.UUID | None = None,
     level: LogLevel | None = None,
+    include_debug: bool = Query(default=False),
     from_ts: datetime | None = Query(default=None, alias="from"),
     to_ts: datetime | None = Query(default=None, alias="to"),
     page: int = Query(default=1, ge=1),
@@ -31,6 +32,8 @@ def list_logs(
         query = query.where(ExecutionLog.chain_id == chain_id)
     if level is not None:
         query = query.where(ExecutionLog.level == level)
+    elif not include_debug:
+        query = query.where(ExecutionLog.level != LogLevel.DEBUG)
     if from_ts is not None:
         query = query.where(ExecutionLog.timestamp >= from_ts)
     if to_ts is not None:

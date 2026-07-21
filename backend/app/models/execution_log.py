@@ -11,6 +11,7 @@ from app.database import Base
 
 
 class LogLevel(str, enum.Enum):
+    DEBUG = "debug"
     INFO = "info"
     WARNING = "warning"
     ERROR = "error"
@@ -18,6 +19,7 @@ class LogLevel(str, enum.Enum):
 
 class EventType(str, enum.Enum):
     TRIGGER_DETECTED = "trigger_detected"
+    CHAIN_STARTED = "chain_started"
     STEP_EXECUTED = "step_executed"
     STEP_FAILED = "step_failed"
     CHAIN_COMPLETED = "chain_completed"

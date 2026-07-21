@@ -129,9 +129,11 @@
   "logs": {
     "account": "Konto",
     "status": "Status",
+    "debug": "Detail",
     "info": "Info",
     "warning": "Warnung",
     "error": "Fehler",
+    "showDetails": "Detail-Logs anzeigen",
     "time": "Zeit",
     "event": "Ereignis",
     "message": "Nachricht",

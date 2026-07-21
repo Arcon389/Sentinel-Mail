@@ -1007,6 +1007,16 @@ td button {
   font-weight: 650;
 }
 
+.log-row-debug td:nth-child(2) {
+  color: var(--text-muted);
+}
+
+.log-show-details {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.4rem;
+}
+
 .pagination {
   display: flex;
   gap: 1rem;

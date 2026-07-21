@@ -9,12 +9,14 @@ export function LogsPage() {
   const { t } = useTranslation();
   const [accountId, setAccountId] = useState("");
   const [level, setLevel] = useState("");
+  const [showDebug, setShowDebug] = useState(false);
   const [page, setPage] = useState(1);
 
   const { data: accounts } = useQuery({ queryKey: ["accounts"], queryFn: accountsApi.list });
   const { data } = useQuery({
-    queryKey: ["logs", accountId, level, page],
-    queryFn: () => logsApi.list({ account_id: accountId || undefined, level: level || undefined, page }),
+    queryKey: ["logs", accountId, level, showDebug, page],
+    queryFn: () =>
+      logsApi.list({ account_id: accountId || undefined, level: level || undefined, include_debug: showDebug, page }),
   });
 
   const totalPages = data ? Math.max(1, Math.ceil(data.total / data.page_size)) : 1;
@@ -49,10 +51,22 @@ export function LogsPage() {
               }}
             >
               <option value="">{t("common.all")}</option>
+              <option value="debug">{t("logs.debug")}</option>
               <option value="info">{t("logs.info")}</option>
               <option value="warning">{t("logs.warning")}</option>
               <option value="error">{t("logs.error")}</option>
             </select>
+          </label>
+          <label className="log-show-details">
+            <input
+              type="checkbox"
+              checked={showDebug}
+              onChange={(e) => {
+                setShowDebug(e.target.checked);
+                setPage(1);
+              }}
+            />
+            {t("logs.showDetails")}
           </label>
         </div>
 

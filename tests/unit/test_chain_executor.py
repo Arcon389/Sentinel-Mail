@@ -128,6 +128,7 @@ def test_http_status_400_plus_counts_as_failure(db):
         execute_chain(db, chain, make_account(), {})
 
     logged_event_types = [call.args[0].event_type.value for call in db.add.call_args_list]
+    assert "chain_started" in logged_event_types
     assert "step_failed" in logged_event_types
     assert "step_executed" not in logged_event_types
 

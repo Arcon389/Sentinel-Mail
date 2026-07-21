@@ -147,6 +147,7 @@ def _still_active(db: Session, chain: ActionChain, account: Account) -> bool:
 
 def execute_chain(db: Session, chain: ActionChain, account: Account, context: dict, trigger_uid: str | None = None) -> None:
     steps = sorted(chain.steps, key=lambda s: s.position)
+    _log(db, account, chain, None, LogLevel.INFO, EventType.CHAIN_STARTED, f"Chain '{chain.name}' started")
     infinite = chain.loop_enabled and chain.loop_infinite
     iterations = chain.loop_max_iterations if (chain.loop_enabled and not infinite) else None
 
@@ -188,7 +189,7 @@ def execute_chain(db: Session, chain: ActionChain, account: Account, context: di
                     account,
                     chain,
                     step,
-                    LogLevel.INFO,
+                    LogLevel.DEBUG,
                     EventType.STEP_EXECUTED,
                     f"Step {step.position} ({step.step_type.value}) executed successfully",
                     details,
