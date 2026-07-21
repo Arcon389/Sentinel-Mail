@@ -44,9 +44,11 @@ export function UsersPage() {
   return (
     <AppShell title={t("users.title")}>
       {!showForm && (
-        <button type="button" onClick={() => setShowForm(true)}>
-          {t("users.newUserButton")}
-        </button>
+        <div className="page-actions">
+          <button type="button" onClick={() => setShowForm(true)}>
+            {t("users.newUserButton")}
+          </button>
+        </div>
       )}
       {showForm && (
       <form

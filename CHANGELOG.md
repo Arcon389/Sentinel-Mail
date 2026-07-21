@@ -7,10 +7,11 @@ Format angelehnt an [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ### Behoben
 
-- **Zu kleiner Abstand auf der IMAP-Konten-Seite**: Der Button „Neues Konto“
-  (`frontend/src/pages/AccountsPage.tsx`) hatte keinen `page-actions`-Wrapper und damit
-  keinen `margin-bottom` zur darunterliegenden Überschrift „Konten“. Fix analog zur
-  Drucker-Seite: Button in `<div className="page-actions">` verpackt.
+- **Zu kleiner Abstand auf der IMAP-Konten- und der Benutzer-Seite**: Die Buttons
+  „Neues Konto“ (`frontend/src/pages/AccountsPage.tsx`) und „Neuer Benutzer“
+  (`frontend/src/pages/UsersPage.tsx`) hatten keinen `page-actions`-Wrapper und damit
+  keinen `margin-bottom` zur darunterliegenden Überschrift. Fix analog zur
+  Drucker-Seite: Buttons jeweils in `<div className="page-actions">` verpackt.
 - **Dashboard zeigte Konten-Daten erst nach Reload aktuell**: Der zentrale API-Client
   (`frontend/src/api/client.ts`) setzte kein `cache`-Verhalten, wodurch der Browser GET-Anfragen
   potenziell aus dem HTTP-Cache statt frisch vom Server beantwortete. Dadurch aktualisierten sich
