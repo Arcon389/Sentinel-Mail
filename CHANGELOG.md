@@ -93,6 +93,18 @@ Format angelehnt an [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ### Behoben
 
+- **Log-Zeitstempel stimmten nicht mit der konfigurierten/erwarteten Zeitzone überein**:
+  Konsolen-/Container-Logs (`backend/app/logging_config.py`) nutzten bisher `time.gmtime`
+  (UTC) statt der in `.env` gesetzten `APP_TIMEZONE`; ein neuer `TzFormatter` formatiert
+  `%(asctime)s` jetzt in der konfigurierten Zeitzone (inkl. `CET`/`CEST`-Suffix). Die
+  Zeitzonenauflösung (`resolve_timezone`) wurde dafür von `worker/worker/chain_matcher.py`
+  nach `backend/app/services/timezone.py` verschoben, damit Backend und Worker sie
+  gemeinsam nutzen. Zusätzlich zeigte die GUI-Seite „Logs" Zeiten 2 Stunden zu früh an,
+  weil `execution_logs.timestamp` timezone-naiv gespeichert wurde und der Browser den
+  UTC-Wert dadurch fälschlich als bereits-lokale Zeit interpretierte
+  (`new Date(...)`-Verhalten bei ISO-Strings ohne Offset); die Spalte ist jetzt
+  timezone-aware (`DateTime(timezone=True)`, Migration `0011`), sodass die GUI korrekt in
+  die jeweilige Browser-Zeitzone umrechnet.
 - **Worker-Fehler `relation "accounts" does not exist` beim Start**: `web` und `worker`
   starteten beide gleichzeitig, sobald Postgres gesund war — die DB-Migrationen
   (`alembic upgrade head`) laufen aber erst danach im `web`-Container. Der `worker` fragte die

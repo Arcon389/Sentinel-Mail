@@ -10,18 +10,10 @@ chain actually needs it (see chain_needs_body) and for logging skips.
 import logging
 import re
 from datetime import datetime, time
-from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+
+from app.services.timezone import resolve_timezone
 
 logger = logging.getLogger("sentinel_mail.worker.chain_matcher")
-
-
-def resolve_timezone(name: str) -> ZoneInfo:
-    """Resolves an IANA timezone name, falling back to UTC on any error."""
-    try:
-        return ZoneInfo(name)
-    except (ZoneInfoNotFoundError, ValueError):
-        logger.warning("Unknown timezone '%s', falling back to UTC", name)
-        return ZoneInfo("UTC")
 
 
 def _parse_hhmm(value: str | None) -> time | None:

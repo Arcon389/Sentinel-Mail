@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Enum, ForeignKey, Index, String, Text
+from sqlalchemy import DateTime, Enum, ForeignKey, Index, String, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
@@ -42,7 +42,9 @@ class ExecutionLog(Base):
         UUID(as_uuid=True), ForeignKey("chain_steps.id", ondelete="SET NULL"), nullable=True
     )
 
-    timestamp: Mapped[datetime] = mapped_column(server_default=func.now(), nullable=False)
+    timestamp: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
     level: Mapped[LogLevel] = mapped_column(
         Enum(LogLevel, name="log_level", values_callable=lambda enum_cls: [e.value for e in enum_cls]),
         nullable=False,
