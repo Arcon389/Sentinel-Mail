@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import select
 
 from app.api import accounts, action_chains, auth, logs, printers, stats, system, users
+from app.api import settings as settings_api
 from app.config import get_settings
 from app.database import SessionLocal
 from app.logging_config import configure_logging
@@ -41,6 +42,7 @@ app.include_router(stats.router)
 app.include_router(printers.router)
 app.include_router(system.router)
 app.include_router(users.router)
+app.include_router(settings_api.router)
 
 
 def _ensure_initial_admin() -> None:

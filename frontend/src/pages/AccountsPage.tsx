@@ -17,6 +17,7 @@ const emptyForm: AccountInput = {
   poll_interval_seconds: null,
   use_idle: null,
   is_active: true,
+  maintenance_mode: false,
   sender_list: null,
   sender_list_mode: "off",
 };
@@ -98,6 +99,7 @@ export function AccountsPage() {
       poll_interval_seconds: account.poll_interval_seconds,
       use_idle: account.use_idle,
       is_active: account.is_active,
+      maintenance_mode: account.maintenance_mode,
       sender_list: account.sender_list,
       sender_list_mode: account.sender_list_mode,
     });
@@ -251,6 +253,15 @@ export function AccountsPage() {
             />
             {t("accounts.activeMonitoring")}
           </label>
+          <label>
+            <input
+              type="checkbox"
+              checked={form.maintenance_mode}
+              onChange={(e) => setForm({ ...form, maintenance_mode: e.target.checked })}
+            />
+            {t("accounts.maintenanceMode")}
+          </label>
+          <p className="hint">{t("accounts.maintenanceModeHint")}</p>
           {formError && <p className="error">{formError}</p>}
           {testResult && <p>{testResult}</p>}
           <div className="button-row">
@@ -273,6 +284,7 @@ export function AccountsPage() {
               <th>{t("accounts.name")}</th>
               <th>{t("accounts.host")}</th>
               <th>{t("accounts.active")}</th>
+              <th>{t("accounts.maintenanceMode")}</th>
               <th>{t("accounts.unread")}</th>
               <th>{t("accounts.lastCheck")}</th>
               <th></th>
@@ -286,6 +298,14 @@ export function AccountsPage() {
                   {account.imap_host}:{account.imap_port}
                 </td>
                 <td>{account.is_active ? t("common.yes") : t("common.no")}</td>
+                <td>
+                  <button
+                    type="button"
+                    onClick={() => updateMutation.mutate({ id: account.id, input: { maintenance_mode: !account.maintenance_mode } })}
+                  >
+                    {account.maintenance_mode ? t("accounts.maintenanceOn") : t("accounts.maintenanceOff")}
+                  </button>
+                </td>
                 <td>{account.state?.last_unread_count ?? "–"}</td>
                 <td>{account.state?.last_checked_at ? new Date(account.state.last_checked_at).toLocaleString() : "–"}</td>
                 <td>

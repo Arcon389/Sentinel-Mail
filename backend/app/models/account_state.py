@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -20,5 +20,8 @@ class AccountState(Base):
     last_checked_at: Mapped[datetime | None] = mapped_column(nullable=True)
     last_message_uid_seen: Mapped[str | None] = mapped_column(String(255), nullable=True)
     last_error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Set once an admin notification has been sent for the current failure episode,
+    # so we don't re-notify on every poll tick. Reset to False on the next successful poll.
+    connection_failure_notified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     account: Mapped["Account"] = relationship(back_populates="state")

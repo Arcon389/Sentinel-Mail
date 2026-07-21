@@ -72,6 +72,7 @@
     "statusPaused": "Paused",
     "statusError": "Error",
     "statusActive": "Active",
+    "statusMaintenance": "Maintenance",
     "lastTriggered": "Last triggered",
     "neverTriggered": "never triggered",
     "charts": "Activity",
@@ -80,7 +81,10 @@
     "window1h": "1 h",
     "window24h": "24 h",
     "window7d": "7 d",
-    "window1m": "1 mo"
+    "window1m": "1 mo",
+    "connectionIssues": "Connection issues",
+    "globalMaintenance": "Global maintenance mode",
+    "globalMaintenanceHint": "Stops fetching new mail for all accounts until this mode is disabled again."
   },
   "accounts": {
     "deleteAccountConfirm": "Really delete account \"{{name}}\"? This cannot be undone.",
@@ -115,6 +119,10 @@
     "senderList": "Sender list",
     "senderListHint": "One sender or domain per line. Substring match, case-insensitive. The filter applies account-wide before any chain runs.",
     "activeMonitoring": "Active (monitoring running)",
+    "maintenanceMode": "Maintenance mode",
+    "maintenanceModeHint": "Stops fetching new mail for this account until this mode is disabled again.",
+    "maintenanceOn": "Maintenance on",
+    "maintenanceOff": "No maintenance",
     "testConnection": "Test connection",
     "accountsHeading": "Accounts",
     "host": "Host",

@@ -20,6 +20,7 @@ from app.config import get_settings
 from app.database import SessionLocal
 from app.logging_config import configure_logging
 from app.models.account import Account, effective_use_idle
+from app.models.app_settings import get_app_settings
 from worker.idle_watcher import IdleSupervisor
 from worker.poller import poll_account
 
@@ -46,7 +47,7 @@ async def _poll_if_due(account_id, next_due: dict, supervisor: IdleSupervisor) -
     db = SessionLocal()
     try:
         account = db.get(Account, account_id)
-        if account is None or not account.is_active:
+        if account is None or not account.is_active or account.maintenance_mode:
             next_due.pop(account_id, None)
             return
 
@@ -77,8 +78,9 @@ async def main() -> None:
                 settings = get_settings()
                 db = SessionLocal()
                 try:
+                    global_maintenance = get_app_settings(db).maintenance_mode
                     accounts = db.execute(
-                        select(Account.id, Account.use_idle).where(Account.is_active.is_(True))
+                        select(Account.id, Account.use_idle, Account.maintenance_mode).where(Account.is_active.is_(True))
                     ).all()
                 finally:
                     db.close()
@@ -90,10 +92,13 @@ async def main() -> None:
                 await asyncio.sleep(TICK_SECONDS)
                 continue
 
-            account_ids = [row.id for row in accounts]
+            # Global maintenance mode pauses every account; per-account maintenance_mode
+            # is filtered out below so the IDLE supervisor drops its live connection too.
+            active_rows = [] if global_maintenance else [row for row in accounts if not row.maintenance_mode]
+            account_ids = [row.id for row in active_rows]
             idle_ids = [
                 row.id
-                for row in accounts
+                for row in active_rows
                 if (row.use_idle if row.use_idle is not None else settings.default_use_idle)
             ]
             supervisor.reconcile(idle_ids)

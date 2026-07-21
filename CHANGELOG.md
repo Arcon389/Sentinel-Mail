@@ -16,6 +16,13 @@ Format angelehnt an [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ### Hinzugefügt
 
+- **IMAP-Verbindungsüberwachung**: Konten, deren IMAP-Verbindung gerade fehlschlägt, werden im
+  Dashboard unter „Verbindungsprobleme" aufgelistet; beim Übergang von „ok" zu „fehlgeschlagen"
+  erhalten alle Admin-Nutzer eine E-Mail-Benachrichtigung (`worker/worker/poller.py`). Zusätzlich
+  gibt es einen Wartungsmodus pro Konto (`Account.maintenance_mode`) sowie global
+  (`AppSettings.maintenance_mode`, neuer Endpunkt `/api/settings`), der den Mailabruf gezielt
+  stoppt, ohne das Konto zu deaktivieren; beim Ausschalten läuft der Abruf normal weiter
+  (Migration `0010`).
 - **Aussagekräftigere Fehlermeldungen beim IMAP-Verbindungstest**: Statt der rohen
   `imaplib`-Fehlermeldung (z. B. `b'LOGIN failed.'`) klassifiziert `ImapConnectionError`
   jetzt die Ursache (`auth_failed`, `dns_error`, `timeout`, `connection_refused`,

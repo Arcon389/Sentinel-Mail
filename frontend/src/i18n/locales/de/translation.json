@@ -72,6 +72,7 @@
     "statusPaused": "Pausiert",
     "statusError": "Fehler",
     "statusActive": "Aktiv",
+    "statusMaintenance": "Wartung",
     "lastTriggered": "Zuletzt ausgelöst",
     "neverTriggered": "noch nie ausgelöst",
     "charts": "Aktivität",
@@ -80,7 +81,10 @@
     "window1h": "1 Std.",
     "window24h": "24 Std.",
     "window7d": "7 Tage",
-    "window1m": "1 Monat"
+    "window1m": "1 Monat",
+    "connectionIssues": "Verbindungsprobleme",
+    "globalMaintenance": "Globaler Wartungsmodus",
+    "globalMaintenanceHint": "Stoppt den Abruf neuer Mails für alle Konten, bis der Modus wieder deaktiviert wird."
   },
   "accounts": {
     "deleteAccountConfirm": "Konto \"{{name}}\" wirklich löschen? Dies kann nicht rückgängig gemacht werden.",
@@ -115,6 +119,10 @@
     "senderList": "Absenderliste",
     "senderListHint": "Ein Absender oder eine Domain pro Zeile. Teiltreffer, Groß-/Kleinschreibung wird ignoriert. Der Filter greift kontoweit, bevor eine Kette startet.",
     "activeMonitoring": "Aktiv (Überwachung läuft)",
+    "maintenanceMode": "Wartungsmodus",
+    "maintenanceModeHint": "Stoppt den Abruf neuer Mails für dieses Konto, bis der Modus wieder deaktiviert wird.",
+    "maintenanceOn": "Wartung aktiv",
+    "maintenanceOff": "Keine Wartung",
     "testConnection": "Verbindung testen",
     "accountsHeading": "Konten",
     "host": "Host",

@@ -17,6 +17,7 @@ class AccountBase(BaseModel):
     poll_interval_seconds: int | None = Field(default=None, ge=5)
     use_idle: bool | None = None
     is_active: bool = True
+    maintenance_mode: bool = False
     sender_list: str | None = None
     sender_list_mode: SenderListMode = "off"
 
@@ -36,6 +37,7 @@ class AccountUpdate(BaseModel):
     poll_interval_seconds: int | None = Field(default=None, ge=5)
     use_idle: bool | None = None
     is_active: bool | None = None
+    maintenance_mode: bool | None = None
     sender_list: str | None = None
     sender_list_mode: SenderListMode | None = None
 

@@ -19,6 +19,7 @@ export interface Account {
   poll_interval_seconds: number | null;
   use_idle: boolean | null;
   is_active: boolean;
+  maintenance_mode: boolean;
   sender_list: string | null;
   sender_list_mode: SenderListMode;
   created_at: string;
@@ -39,6 +40,7 @@ export interface AccountInput {
   poll_interval_seconds: number | null;
   use_idle: boolean | null;
   is_active: boolean;
+  maintenance_mode: boolean;
   sender_list: string | null;
   sender_list_mode: SenderListMode;
 }

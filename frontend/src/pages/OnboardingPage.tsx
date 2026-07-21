@@ -30,6 +30,7 @@ const emptyAccount: AccountInput = {
   poll_interval_seconds: null,
   use_idle: null,
   is_active: true,
+  maintenance_mode: false,
   sender_list: null,
   sender_list_mode: "off",
 };

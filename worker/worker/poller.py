@@ -11,9 +11,12 @@ from app.database import SessionLocal
 from app.models.account import Account
 from app.models.account_state import AccountState
 from app.models.action_chain import ActionChain, TriggerType
+from app.models.app_settings import get_app_settings
 from app.models.execution_log import EventType, ExecutionLog, LogLevel
+from app.models.user import User, UserRole
 from app.security.crypto import decrypt
 from app.services.imap_client import AccountSnapshot, ImapConnectionError, fetch_full_message, fetch_snapshot
+from app.services.smtp_client import SmtpNotConfiguredError, SmtpSendError, send_email
 from worker.chain_executor import execute_chain
 from worker.chain_matcher import (
     account_allows_sender,
@@ -152,6 +155,26 @@ def _default_trigger_handler(db: Session, account: Account, trigger_type: Trigge
         _run_chain_in_background(chain.id, account.id, context, snapshot.latest_uid)
 
 
+def _notify_admins_of_connection_failure(db: Session, account: Account, error_message: str) -> None:
+    admin_emails = db.scalars(select(User.email).where(User.role == UserRole.ADMIN)).all()
+    if not admin_emails:
+        return
+    settings = get_settings()
+    from_address = settings.smtp_username or "sentinel-mail@localhost"
+    subject = f"Sentinel Mail: IMAP-Verbindung zu '{account.name}' fehlgeschlagen"
+    body = (
+        f"Die Verbindung zum IMAP-Konto '{account.name}' ({account.username}@{account.imap_host}) "
+        f"ist fehlgeschlagen:\n\n{error_message}"
+    )
+    for email in admin_emails:
+        try:
+            send_email(from_address, email, subject, body)
+        except (SmtpNotConfiguredError, SmtpSendError):
+            logger.warning(
+                "Could not notify admin %s about connection failure for account %s", email, account.name, exc_info=True
+            )
+
+
 def poll_account(db: Session, account: Account, on_trigger: TriggerHandler = _default_trigger_handler) -> None:
     # Serialise per account so a concurrent IDLE-push poll and safety poll of the
     # same account can't both detect (and dispatch) the same transition.
@@ -160,6 +183,11 @@ def poll_account(db: Session, account: Account, on_trigger: TriggerHandler = _de
 
 
 def _poll_account_locked(db: Session, account: Account, on_trigger: TriggerHandler) -> None:
+    # Authoritative maintenance guard: both the tick loop and the IDLE watcher call
+    # poll_account() directly, so this check has to live here rather than only upstream.
+    if account.maintenance_mode or get_app_settings(db).maintenance_mode:
+        return
+
     state = db.get(AccountState, account.id)
     if state is None:
         state = AccountState(account_id=account.id)
@@ -171,6 +199,7 @@ def _poll_account_locked(db: Session, account: Account, on_trigger: TriggerHandl
             account.imap_host, account.imap_port, account.use_ssl, account.username, password, account.folder
         )
     except ImapConnectionError as exc:
+        was_already_failing = state.connection_failure_notified
         state.last_error = str(exc)
         state.last_checked_at = datetime.now(timezone.utc)
         db.add(
@@ -185,6 +214,10 @@ def _poll_account_locked(db: Session, account: Account, on_trigger: TriggerHandl
         )
         db.commit()
         logger.warning("Poll failed for account %s: %s", account.name, exc)
+        if not was_already_failing:
+            _notify_admins_of_connection_failure(db, account, str(exc))
+            state.connection_failure_notified = True
+            db.commit()
         return
 
     previous_count = state.last_unread_count
@@ -194,6 +227,7 @@ def _poll_account_locked(db: Session, account: Account, on_trigger: TriggerHandl
     state.last_checked_at = datetime.now(timezone.utc)
     state.last_message_uid_seen = snapshot.latest_uid or state.last_message_uid_seen
     state.last_error = None
+    state.connection_failure_notified = False
 
     for trigger_type in triggers:
         db.add(

@@ -26,6 +26,9 @@ class Account(Base):
     # None => inherit the global default (settings.default_use_idle). See effective_use_idle().
     use_idle: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    # Temporary pause of polling only (e.g. IMAP server maintenance), independent of
+    # is_active. See app.models.app_settings for the system-wide equivalent.
+    maintenance_mode: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     # Account-wide sender gate, applied before any chain runs. One entry per line;
     # matching is case-insensitive substring. Modes: "off" | "whitelist" | "blacklist".

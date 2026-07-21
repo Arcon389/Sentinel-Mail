@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import {
   CartesianGrid,
@@ -12,16 +12,47 @@ import {
   YAxis,
 } from "recharts";
 import { accountsApi } from "../api/accounts";
+import { settingsApi } from "../api/settings";
 import { statsApi, type StatsWindow } from "../api/stats";
 import { AppShell } from "../components/common/AppShell";
+import { useAuth } from "../auth/AuthContext";
 
 const WINDOWS: StatsWindow[] = ["1h", "24h", "7d", "1m"];
 
-function StatusPill({ account }: { account: { is_active: boolean; state?: { last_error: string | null } | null } }) {
+function StatusPill({
+  account,
+}: {
+  account: { is_active: boolean; maintenance_mode: boolean; state?: { last_error: string | null } | null };
+}) {
   const { t } = useTranslation();
+  if (account.maintenance_mode) return <span className="status-pill status-paused">{t("dashboard.statusMaintenance")}</span>;
   if (!account.is_active) return <span className="status-pill status-paused">{t("dashboard.statusPaused")}</span>;
   if (account.state?.last_error) return <span className="status-pill status-error">{t("dashboard.statusError")}</span>;
   return <span className="status-pill status-active">{t("dashboard.statusActive")}</span>;
+}
+
+function GlobalMaintenanceCard() {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const { data: settings } = useQuery({ queryKey: ["app-settings"], queryFn: settingsApi.get });
+  const mutation = useMutation({
+    mutationFn: settingsApi.update,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["app-settings"] }),
+  });
+
+  return (
+    <section className="stats-charts">
+      <label>
+        <input
+          type="checkbox"
+          checked={settings?.maintenance_mode ?? false}
+          onChange={(e) => mutation.mutate({ maintenance_mode: e.target.checked })}
+        />
+        {t("dashboard.globalMaintenance")}
+      </label>
+      <p className="hint">{t("dashboard.globalMaintenanceHint")}</p>
+    </section>
+  );
 }
 
 function formatTick(iso: string, window: StatsWindow): string {
@@ -81,10 +112,25 @@ function StatsCharts() {
 
 export function DashboardPage() {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const { data: accounts } = useQuery({ queryKey: ["accounts"], queryFn: accountsApi.list, refetchInterval: 15000 });
+  const failingAccounts = accounts?.filter((account) => account.state?.last_error && !account.maintenance_mode) ?? [];
 
   return (
     <AppShell title={t("nav.dashboard")}>
+      {user?.role === "admin" && <GlobalMaintenanceCard />}
+      {failingAccounts.length > 0 && (
+        <section className="stats-charts">
+          <h2>{t("dashboard.connectionIssues")}</h2>
+          <ul>
+            {failingAccounts.map((account) => (
+              <li key={account.id}>
+                {account.name} — {account.state?.last_error}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
       <StatsCharts />
       <table>
         <thead>
