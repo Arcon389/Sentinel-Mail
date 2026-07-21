@@ -125,9 +125,11 @@ export function AccountsPage() {
   return (
     <AppShell title={t("nav.accounts")}>
       {!showForm && !editingId && (
-        <button type="button" onClick={() => { setForm(emptyForm); setShowForm(true); }}>
-          {t("accounts.newAccountButton")}
-        </button>
+        <div className="page-actions">
+          <button type="button" onClick={() => { setForm(emptyForm); setShowForm(true); }}>
+            {t("accounts.newAccountButton")}
+          </button>
+        </div>
       )}
       {(showForm || editingId) && (
       <form onSubmit={onSubmit} className="account-form">
