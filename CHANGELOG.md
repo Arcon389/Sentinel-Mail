@@ -16,6 +16,13 @@ Format angelehnt an [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ### Hinzugefügt
 
+- **Aussagekräftigere Fehlermeldungen beim IMAP-Verbindungstest**: Statt der rohen
+  `imaplib`-Fehlermeldung (z. B. `b'LOGIN failed.'`) klassifiziert `ImapConnectionError`
+  jetzt die Ursache (`auth_failed`, `dns_error`, `timeout`, `connection_refused`,
+  `ssl_error`, `folder_not_found`) und `TestConnectionResult` liefert diesen `error_code`
+  mit. Frontend zeigt dazu einen übersetzten, handlungsorientierten Hinweis inkl. der
+  rohen Server-Meldung (`backend/app/services/imap_client.py`,
+  `backend/app/api/accounts.py`, `frontend/src/api/accounts.ts`).
 - **Logeintrag „Kette gestartet"**: Zu Beginn jeder Kettenausführung wird jetzt ein
   `CHAIN_STARTED`-Eintrag geschrieben (`worker/worker/chain_executor.py`), sodass der Übergang von
   Auslösung zu Ausführung in den Logs sichtbar ist (Migration `0009` ergänzt den Enum-Wert).

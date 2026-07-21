@@ -65,6 +65,7 @@ class AccountWithState(AccountOut):
 class TestConnectionResult(BaseModel):
     success: bool
     message: str
+    error_code: str | None = None
 
 
 class AccountDefaults(BaseModel):

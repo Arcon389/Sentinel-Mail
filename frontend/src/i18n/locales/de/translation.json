@@ -124,7 +124,17 @@
     "saveFailed": "Speichern fehlgeschlagen",
     "testFailed": "Test fehlgeschlagen",
     "testEnterPassword": "Bitte zuerst ein Passwort eingeben, um die Verbindung zu testen.",
-    "testing": "Teste Verbindung..."
+    "testing": "Teste Verbindung...",
+    "testErrors": {
+      "auth_failed": "Anmeldung fehlgeschlagen – Benutzername und Passwort prüfen. Bei Gmail/Outlook & Co. ggf. ein App-Passwort verwenden, falls Zwei-Faktor-Authentifizierung aktiv ist.",
+      "dns_error": "Server nicht gefunden – bitte den Hostnamen prüfen.",
+      "timeout": "Zeitüberschreitung – Server nicht erreichbar. Host, Port und Netzwerkverbindung prüfen.",
+      "connection_refused": "Verbindung abgelehnt – bitte Port und SSL-Einstellung prüfen.",
+      "ssl_error": "TLS/SSL-Fehler – bitte SSL-Einstellung und Port prüfen.",
+      "folder_not_found": "Ordner konnte nicht ausgewählt werden – bitte den Ordnernamen prüfen.",
+      "imap_error": "Verbindung zum Server fehlgeschlagen.",
+      "connection_failed": "Verbindung zum Server fehlgeschlagen."
+    }
   },
   "logs": {
     "account": "Konto",

@@ -120,7 +120,7 @@ def test_new_connection(payload: AccountCreate) -> TestConnectionResult:
     try:
         test_connection(payload.imap_host, payload.imap_port, payload.use_ssl, payload.username, payload.password, payload.folder)
     except ImapConnectionError as exc:
-        return TestConnectionResult(success=False, message=str(exc))
+        return TestConnectionResult(success=False, message=str(exc), error_code=exc.code)
     return TestConnectionResult(success=True, message="Verbindung erfolgreich")
 
 
@@ -131,5 +131,5 @@ def test_existing_connection(account_id: uuid.UUID, db: Session = Depends(get_db
         password = decrypt(account.encrypted_password)
         test_connection(account.imap_host, account.imap_port, account.use_ssl, account.username, password, account.folder)
     except ImapConnectionError as exc:
-        return TestConnectionResult(success=False, message=str(exc))
+        return TestConnectionResult(success=False, message=str(exc), error_code=exc.code)
     return TestConnectionResult(success=True, message="Verbindung erfolgreich")

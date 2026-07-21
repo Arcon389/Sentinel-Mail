@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { type Account, type AccountInput, accountsApi } from "../api/accounts";
+import { type Account, type AccountInput, accountsApi, formatTestResult } from "../api/accounts";
 import { ApiError } from "../api/client";
 import { AppShell } from "../components/common/AppShell";
 import { useConfirm } from "../components/common/ConfirmDialog";
@@ -114,7 +114,7 @@ export function AccountsPage() {
     setTestResult(t("accounts.testing"));
     try {
       const result = editingId ? await accountsApi.testExisting(editingId) : await accountsApi.testNew(form);
-      setTestResult(result.success ? `✓ ${result.message}` : `✗ ${result.message}`);
+      setTestResult(formatTestResult(result, t));
     } catch (err) {
       setTestResult(err instanceof ApiError ? `✗ ${err.message}` : `✗ ${t("accounts.testFailed")}`);
     }

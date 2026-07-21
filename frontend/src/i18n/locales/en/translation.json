@@ -124,7 +124,17 @@
     "saveFailed": "Save failed",
     "testFailed": "Test failed",
     "testEnterPassword": "Please enter a password first to test the connection.",
-    "testing": "Testing connection..."
+    "testing": "Testing connection...",
+    "testErrors": {
+      "auth_failed": "Login failed – check username and password. For Gmail/Outlook and similar providers, use an app password if two-factor authentication is enabled.",
+      "dns_error": "Server not found – please check the hostname.",
+      "timeout": "Timed out – server unreachable. Check host, port, and network connection.",
+      "connection_refused": "Connection refused – please check the port and SSL setting.",
+      "ssl_error": "TLS/SSL error – please check the SSL setting and port.",
+      "folder_not_found": "Could not select the folder – please check the folder name.",
+      "imap_error": "Connection to the server failed.",
+      "connection_failed": "Connection to the server failed."
+    }
   },
   "logs": {
     "account": "Account",

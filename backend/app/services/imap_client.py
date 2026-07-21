@@ -4,13 +4,25 @@
 
 import email
 import imaplib
+import socket
+import ssl
 from dataclasses import dataclass
 from email.header import decode_header
 from email.message import Message
 
+_AUTH_FAILURE_MARKERS = ("login failed", "authenticationfailed", "invalid credentials", "auth failed")
+
 
 class ImapConnectionError(Exception):
-    """Raised when a connection/login/select against an IMAP server fails."""
+    """Raised when a connection/login/select against an IMAP server fails.
+
+    `code` classifies the failure (e.g. "auth_failed", "dns_error", "timeout") so the
+    API/frontend can show a translated, actionable message instead of the raw imaplib text.
+    """
+
+    def __init__(self, code: str, detail: str) -> None:
+        super().__init__(detail)
+        self.code = code
 
 
 @dataclass
@@ -43,15 +55,27 @@ def _connect(host: str, port: int, use_ssl: bool, username: str, password: str) 
     try:
         conn = imaplib.IMAP4_SSL(host, port) if use_ssl else imaplib.IMAP4(host, port)
         conn.login(username, password)
-    except (imaplib.IMAP4.error, OSError) as exc:
-        raise ImapConnectionError(str(exc)) from exc
+    except imaplib.IMAP4.error as exc:
+        detail = str(exc)
+        code = "auth_failed" if any(marker in detail.lower() for marker in _AUTH_FAILURE_MARKERS) else "imap_error"
+        raise ImapConnectionError(code, detail) from exc
+    except ssl.SSLError as exc:
+        raise ImapConnectionError("ssl_error", str(exc)) from exc
+    except socket.gaierror as exc:
+        raise ImapConnectionError("dns_error", str(exc)) from exc
+    except TimeoutError as exc:
+        raise ImapConnectionError("timeout", str(exc)) from exc
+    except ConnectionRefusedError as exc:
+        raise ImapConnectionError("connection_refused", str(exc)) from exc
+    except OSError as exc:
+        raise ImapConnectionError("connection_failed", str(exc)) from exc
     return conn
 
 
 def _select(conn: imaplib.IMAP4, folder: str) -> None:
     status, _ = conn.select(folder, readonly=True)
     if status != "OK":
-        raise ImapConnectionError(f"Could not select folder '{folder}'")
+        raise ImapConnectionError("folder_not_found", f"Could not select folder '{folder}'")
 
 
 def test_connection(host: str, port: int, use_ssl: bool, username: str, password: str, folder: str) -> None:
@@ -73,7 +97,7 @@ def fetch_snapshot(host: str, port: int, use_ssl: bool, username: str, password:
 
         status, data = conn.uid("search", None, "UNSEEN")
         if status != "OK":
-            raise ImapConnectionError("IMAP UID SEARCH UNSEEN failed")
+            raise ImapConnectionError("imap_error", "IMAP UID SEARCH UNSEEN failed")
 
         unseen_uids = data[0].split() if data and data[0] else []
         unread_count = len(unseen_uids)
@@ -142,7 +166,7 @@ def fetch_full_message(
         _select(conn, folder)
         status, msg_data = conn.uid("fetch", uid, "(RFC822)")
         if status != "OK" or not msg_data or not msg_data[0]:
-            raise ImapConnectionError(f"Could not fetch message with UID {uid}")
+            raise ImapConnectionError("imap_error", f"Could not fetch message with UID {uid}")
 
         raw_bytes = msg_data[0][1]
         message = email.message_from_bytes(raw_bytes)

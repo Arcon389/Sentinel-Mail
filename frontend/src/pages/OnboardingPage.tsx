@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { type Account, type AccountInput, accountsApi } from "../api/accounts";
+import { type Account, type AccountInput, accountsApi, formatTestResult } from "../api/accounts";
 import { type ActionChainInput, type TriggerType, actionChainsApi } from "../api/actionChains";
 import { authApi } from "../api/auth";
 import { ApiError } from "../api/client";
@@ -149,7 +149,7 @@ function ImapStep({ onDone, onSkip, onFinish, finishing }: StepProps & { onDone:
     setTestResult(t("accounts.testing"));
     try {
       const result = await accountsApi.testNew(form);
-      setTestResult(result.success ? `✓ ${result.message}` : `✗ ${result.message}`);
+      setTestResult(formatTestResult(result, t));
     } catch (err) {
       setTestResult(err instanceof ApiError ? `✗ ${err.message}` : `✗ ${t("accounts.testFailed")}`);
     }

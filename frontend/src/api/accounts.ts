@@ -46,6 +46,30 @@ export interface AccountInput {
 export interface TestConnectionResult {
   success: boolean;
   message: string;
+  error_code?: string | null;
+}
+
+const TEST_ERROR_CODES = [
+  "auth_failed",
+  "dns_error",
+  "timeout",
+  "connection_refused",
+  "ssl_error",
+  "folder_not_found",
+  "imap_error",
+  "connection_failed",
+];
+
+/** Combines the translated hint for a known `error_code` with the raw server message. */
+export function formatTestResult(result: TestConnectionResult, t: (key: string) => string): string {
+  if (result.success) {
+    return `✓ ${result.message}`;
+  }
+  if (result.error_code && TEST_ERROR_CODES.includes(result.error_code)) {
+    const hint = t(`accounts.testErrors.${result.error_code}`);
+    return `✗ ${hint} (${result.message})`;
+  }
+  return `✗ ${result.message}`;
 }
 
 export interface AccountDefaults {
