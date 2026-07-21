@@ -25,6 +25,11 @@ Format angelehnt an [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ### Hinzugefügt
 
+- **Live-Modus auf der Logs-Seite**: Eine neue Checkbox „Live" aktiviert automatisches
+  Nachladen der Logs alle 5 Sekunden (`frontend/src/pages/LogsPage.tsx`, analog zum
+  bestehenden 15s-Polling im Dashboard). Während Live aktiv ist, wird auf Seite 1
+  verharrt und die Pagination-Buttons sind deaktiviert, damit neue Einträge zuverlässig
+  oben erscheinen.
 - **IMAP-Verbindungsüberwachung**: Konten, deren IMAP-Verbindung gerade fehlschlägt, werden im
   Dashboard unter „Verbindungsprobleme" aufgelistet; beim Übergang von „ok" zu „fehlgeschlagen"
   erhalten alle Admin-Nutzer eine E-Mail-Benachrichtigung (`worker/worker/poller.py`). Zusätzlich

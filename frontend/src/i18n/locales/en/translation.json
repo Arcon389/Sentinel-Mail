@@ -152,6 +152,7 @@
     "warning": "Warning",
     "error": "Error",
     "showDetails": "Show detail logs",
+    "live": "Live",
     "time": "Time",
     "event": "Event",
     "message": "Message",

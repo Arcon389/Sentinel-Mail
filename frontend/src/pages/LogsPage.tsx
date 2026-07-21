@@ -11,12 +11,14 @@ export function LogsPage() {
   const [level, setLevel] = useState("");
   const [showDebug, setShowDebug] = useState(false);
   const [page, setPage] = useState(1);
+  const [live, setLive] = useState(false);
 
   const { data: accounts } = useQuery({ queryKey: ["accounts"], queryFn: accountsApi.list });
   const { data } = useQuery({
     queryKey: ["logs", accountId, level, showDebug, page],
     queryFn: () =>
       logsApi.list({ account_id: accountId || undefined, level: level || undefined, include_debug: showDebug, page }),
+    refetchInterval: live ? 5000 : false,
   });
 
   const totalPages = data ? Math.max(1, Math.ceil(data.total / data.page_size)) : 1;
@@ -68,6 +70,19 @@ export function LogsPage() {
             />
             {t("logs.showDetails")}
           </label>
+          <label className="log-live">
+            <input
+              type="checkbox"
+              checked={live}
+              onChange={(e) => {
+                setLive(e.target.checked);
+                if (e.target.checked) {
+                  setPage(1);
+                }
+              }}
+            />
+            {t("logs.live")}
+          </label>
         </div>
 
         <table>
@@ -92,11 +107,11 @@ export function LogsPage() {
         </table>
 
         <div className="pagination">
-          <button disabled={page <= 1} onClick={() => setPage(page - 1)}>
+          <button disabled={live || page <= 1} onClick={() => setPage(page - 1)}>
             {t("common.back")}
           </button>
           <span>{t("logs.page", { page, total: totalPages })}</span>
-          <button disabled={page >= totalPages} onClick={() => setPage(page + 1)}>
+          <button disabled={live || page >= totalPages} onClick={() => setPage(page + 1)}>
             {t("common.next")}
           </button>
         </div>
