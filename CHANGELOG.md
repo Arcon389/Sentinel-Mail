@@ -5,6 +5,15 @@ Format angelehnt an [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ## [Unreleased]
 
+### Dokumentation
+
+- **`.env.example` – mehr Wege zum Erzeugen von `ENCRYPTION_KEY`/`JWT_SECRET`**: Neben dem
+  Python-Einzeiler stehen jetzt auch OpenSSL- (Linux/macOS) und PowerShell-Befehle
+  (Windows) in den Kommentaren, inkl. Hinweis, dass `ENCRYPTION_KEY` zwingend ein gültiger
+  Fernet-Key (32 zufällige Bytes, url-safe base64) sein muss — ein falsch formatierter Wert
+  führt beim Anlegen eines Kontos zu `ValueError: Fernet key must be 32 url-safe
+  base64-encoded bytes.` (`app/security/crypto.py`).
+
 ### Hinzugefügt
 
 - **Logeintrag „Kette gestartet"**: Zu Beginn jeder Kettenausführung wird jetzt ein
