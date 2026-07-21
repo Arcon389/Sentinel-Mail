@@ -29,6 +29,12 @@ services:
         condition: service_healthy
     ports:
       - "8000:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/api/health').status==200 else 1)\""]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
   worker:
     build:
@@ -41,6 +47,8 @@ services:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-sentinel}:${POSTGRES_PASSWORD:-sentinel}@db:5432/${POSTGRES_DB:-sentinel_mail}
     depends_on:
       db:
+        condition: service_healthy
+      web:
         condition: service_healthy
 
   cups:
@@ -68,7 +76,8 @@ services:
     image: sentinel-mail-frontend
     restart: unless-stopped
     depends_on:
-      - web
+      web:
+        condition: service_healthy
     ports:
       - "${WEB_SERVER_PORT:-3000}:80"
 

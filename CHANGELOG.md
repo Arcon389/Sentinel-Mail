@@ -70,6 +70,14 @@ Format angelehnt an [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ### Behoben
 
+- **Worker-Fehler `relation "accounts" does not exist` beim Start**: `web` und `worker`
+  starteten beide gleichzeitig, sobald Postgres gesund war — die DB-Migrationen
+  (`alembic upgrade head`) laufen aber erst danach im `web`-Container. Der `worker` fragte die
+  `accounts`-Tabelle ab, bevor sie existierte, und protokollierte einen Traceback (er erholte
+  sich zwar per Retry, das Log-Rauschen war aber irreführend). `web` hat jetzt einen Healthcheck
+  gegen `/api/health`; `worker` und `frontend` warten via `depends_on: condition: service_healthy`
+  darauf, dass `web` (und damit die Migrationen) fertig ist. Das behebt zusätzlich das
+  `nginx: host not found in upstream "web"` beim Frontend-Start.
 - **Stack startet nicht bei CRLF-Zeilenenden**: Gelangten die Quelldateien nicht per frischem
   `git clone`, sondern kopiert/gezippt aus einem Windows-Arbeitsbaum auf den Server, hatten die
   Entrypoint-Skripte CRLF-Zeilenenden. Die Shebang-Zeile endete dann auf `\r`, der Kernel suchte
